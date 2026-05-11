@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, User, Loader2, ArrowRight } from "lucide-react";
 import { useAIEngine } from "@/store/useAIEngine";
-import { useAppStore } from "@/store/useAppStore";
+import { useUIStore } from "@/store/useUIStore";
 
 type Message = {
   id: string;
@@ -12,7 +12,7 @@ type Message = {
 };
 
 export function AIStudioView() {
-  const { setActiveModule } = useAppStore();
+  const setStage = useUIStore((s) => s.setStage);
   const [messages, setMessages] = useState<Message[]>([
     { id: "1", sender: "ai", text: "Hello. I am your ARCOVA Architectural AI. Describe the vision for your project, or tell me about the people who will be using the space, and we will build it together." }
   ]);
@@ -50,11 +50,11 @@ export function AIStudioView() {
       }
 
       // Automatically transition to the CAD Plan viewer
-      setActiveModule("floor_plans");
+      setStage("plan");
     } catch (error) {
       console.error(error);
       // Fallback transition
-      setActiveModule("floor_plans");
+      setStage("plan");
     } finally {
       setIsGeneratingPlan(false);
     }

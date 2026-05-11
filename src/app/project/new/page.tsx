@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useUIStore, WorkspaceStage } from "@/store/useUIStore";
 import OnboardingSystem from "@/components/workspace/OnboardingSystem";
+import { AIStudioView } from "@/components/workspace/AIStudioView";
 import LocationStage from "@/components/workspace/LocationStage";
 import CadStage from "@/components/workspace/CadStage";
 import PlanStage from "@/components/workspace/PlanStage";
@@ -177,7 +178,7 @@ export default function WorkspacePage() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ height: "100%" }}
             >
-              {currentStage === "onboarding" && <OnboardingSystem onNext={goNext} />}
+              {currentStage === "onboarding" && <AIStudioView />}
               {currentStage === "location" && <LocationStage onNext={goNext} />}
               {currentStage === "cad" && <CadStage onNext={goNext} />}
               {currentStage === "plan" && <PlanStage onNext={goNext} />}

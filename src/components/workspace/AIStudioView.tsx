@@ -82,6 +82,10 @@ export function AIStudioView() {
 
       const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.error || `API error: ${response.status}`);
+      }
+
       const replyText = data.reply || "";
       const isReady = replyText.includes("[GENERATE_PLAN_READY]");
       const cleanReply = replyText.replace("[GENERATE_PLAN_READY]", "").trim();
@@ -89,7 +93,7 @@ export function AIStudioView() {
       const aiMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: cleanReply
+        text: cleanReply || "I received your message but couldn't generate a response. Please try again."
       };
 
       setMessages(prev => [...prev, aiMsg]);
@@ -98,6 +102,7 @@ export function AIStudioView() {
       if (isReady) {
         handleGeneratePlan([...updatedMessages, aiMsg]);
       }
+
     } catch (error: any) {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),

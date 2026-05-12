@@ -104,10 +104,14 @@ export function AIStudioView() {
       }
 
     } catch (error: any) {
+      const errorMsg = error.message.includes("expired")
+        ? "🚨 Architectural Intelligence Offline: Your Gemini API key has expired. Please update the .env.local file with a fresh key to continue the design process."
+        : `Error connecting to AI: ${error.message}`;
+        
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: `Error connecting to AI: ${error.message}`
+        text: errorMsg
       }]);
     } finally {
       setIsLoading(false);

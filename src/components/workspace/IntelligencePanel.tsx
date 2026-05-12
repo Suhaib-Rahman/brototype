@@ -45,7 +45,7 @@ export default function IntelligencePanel() {
     }
   }, [copilotMessages, copilotTyping, activeTab]);
 
-  const handleSend = (e?: React.FormEvent) => {
+  const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!inputText.trim() || copilotTyping) return;
     
@@ -54,24 +54,39 @@ export default function IntelligencePanel() {
     addCopilotMessage({ role: "user", content: text });
     setCopilotTyping(true);
 
-    // Simulate AI Copilot Response
-    setTimeout(() => {
-      setCopilotTyping(false);
-      let response = "I've analyzed the floor plan. The current layout is highly efficient, though we could always refine material choices to improve cost further.";
-      
-      const lower = text.toLowerCase();
-      if (lower.includes("fire") || lower.includes("code") || lower.includes("compliance")) {
-        response = "Checking local building codes... The egress routes from all bedrooms meet the minimum width requirements. However, the kitchen may need a secondary mechanical exhaust to comply with Code 4B standard.";
-      } else if (lower.includes("vastu") || lower.includes("feng shui")) {
-        response = "Analyzing orientation... The master bedroom is correctly placed in the South-West. The kitchen is in the South-East, which aligns perfectly with Vastu principles.";
-      } else if (lower.includes("cost") || lower.includes("budget")) {
-        response = "To optimize the budget, I suggest substituting the premium Italian marble in the living room with high-grade vitrified tiles. This could save approximately 15% on flooring costs.";
-      } else if (lower.includes("sun") || lower.includes("light") || lower.includes("ventilation")) {
-        response = "The large windows in the living area are south-facing, providing excellent winter sunlight. The cross-ventilation path between the living room and dining area is unobstructed.";
+    try {
+      const response = await fetch("/api/architect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "copilot",
+          messages: [...copilotMessages, { role: "user", content: text }],
+          projectContext: { 
+            floorPlan: floorPlan,
+            selectedRoom: selectedRoom
+          }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to connect to Architectural Intelligence");
       }
+
+      setCopilotTyping(false);
+      addCopilotMessage({ role: "assistant", content: data.reply });
+    } catch (error: any) {
+      setCopilotTyping(false);
+      const errorMsg = error.message.includes("expired") 
+        ? "🚨 API Connection Error: Your Gemini API key has expired. Please update .env.local with a fresh key to resume Copilot services."
+        : `Connection Error: ${error.message}`;
       
-      addCopilotMessage({ role: "assistant", content: response });
-    }, 1500);
+      addCopilotMessage({ 
+        role: "assistant", 
+        content: errorMsg 
+      });
+    }
   };
 
   const handleSmartSuggestion = (text: string) => {
@@ -83,8 +98,21 @@ export default function IntelligencePanel() {
       
       {/* Header & Tabs */}
       <div style={{ padding: "16px 16px 0", borderBottom: "1px solid var(--border)", background: "var(--surface-1)" }}>
-        <div className="badge badge-cyan" style={{ alignSelf: "flex-start", marginBottom: "16px", display: "inline-flex" }}>
-          <Sparkles size={10} /> Architectural Intelligence
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+          <div className="badge badge-cyan" style={{ display: "inline-flex" }}>
+            <Sparkles size={10} /> Architectural Intelligence
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div style={{ 
+              width: "8px", height: "8px", borderRadius: "50%", 
+              background: "var(--emerald)",
+              boxShadow: "0 0 8px var(--emerald)"
+            }} />
+            <span style={{ fontSize: "10px", color: "var(--t-muted)", fontWeight: 500 }}>
+              Live Intelligence
+            </span>
+          </div>
         </div>
         
         <div style={{ display: "flex", gap: "16px" }}>

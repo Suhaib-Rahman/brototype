@@ -41,85 +41,58 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const processInput = (text: string) => {
+  const processInput = async (text: string) => {
     if (requirementsComplete) return;
     
     addMessage({ role: "user", content: text });
     setTyping(true);
     
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/architect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...messages, { role: "user", content: text }],
+          projectContext: { customer }
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to connect to AI Architect");
+
       setTyping(false);
+      const reply = data.reply;
       
-      let detectedCount = 0;
-      const textLower = text.toLowerCase();
-      const state = useChatStore.getState();
-      const currentChips = state.memoryChips;
-      
-      // Plot
-      const sqftMatch = textLower.match(/(\d+,?\d*)\s*(sqft|square feet|sq ft)/);
-      if (sqftMatch && !currentChips.find(c => c.label === "Plot")) {
-        updateRequirement("plotSqft", parseInt(sqftMatch[1].replace(',', '')));
-        addMemoryChip({ label: "Plot", value: `${sqftMatch[1]} sqft`, color: "blue" });
-        detectedCount++;
-      } else if ((text.includes("1,200") || text.includes("2,400") || text.includes("3,600")) && !currentChips.find(c => c.label === "Plot")) {
-        addMemoryChip({ label: "Plot", value: text, color: "blue" });
-        detectedCount++;
-      }
-
-      // Bedrooms
-      const bedMatch = textLower.match(/(\d+)\s*(bhk|bed|bedroom)/);
-      if (bedMatch && !currentChips.find(c => c.label === "Bedrooms")) {
-        const beds = parseInt(bedMatch[1]);
-        updateRequirement("bedrooms", beds);
-        addMemoryChip({ label: "Bedrooms", value: `${beds} Beds`, color: "cyan" });
-        detectedCount++;
-      }
-
-      // Style
-      if ((textLower.includes("modern") || textLower.includes("traditional") || textLower.includes("contemporary")) && !currentChips.find(c => c.label === "Style")) {
-        const style = textLower.includes("modern") ? "modern" : textLower.includes("traditional") ? "traditional" : "contemporary";
-        updateRequirement("style", style);
-        addMemoryChip({ label: "Style", value: style, color: "violet" });
-        detectedCount++;
-      }
-
-      // Budget
-      if ((textLower.includes("economy") || textLower.includes("standard") || textLower.includes("premium") || textLower.includes("luxury")) && !currentChips.find(c => c.label === "Budget")) {
-        let budgetVal = 80;
-        let tier = "Premium";
-        if (textLower.includes("economy")) { budgetVal = 30; tier = "Economy"; }
-        else if (textLower.includes("standard")) { budgetVal = 50; tier = "Standard"; }
-        else if (textLower.includes("luxury")) { budgetVal = 150; tier = "Luxury"; }
-        
-        updateRequirement("budget", budgetVal);
-        addMemoryChip({ label: "Budget", value: tier, color: "amber" });
-        detectedCount++;
-      }
-
-      const newChips = useChatStore.getState().memoryChips;
-      const missing = [];
-      if (!newChips.find(c => c.label === "Plot")) missing.push("plot");
-      if (!newChips.find(c => c.label === "Bedrooms")) missing.push("bedrooms");
-      if (!newChips.find(c => c.label === "Style")) missing.push("style");
-      if (!newChips.find(c => c.label === "Budget")) missing.push("budget");
-
-      if (missing.length === 0) {
-        addMessage({ role: "assistant", content: "Great! I have all the details I need. Click 'Generate Floor Plan' below when you're ready." });
+      // Check if AI says we are ready to generate
+      if (reply.includes("[GENERATE_PLAN_READY]")) {
         setRequirementsComplete(true);
+        addMessage({ 
+          role: "assistant", 
+          content: reply.replace("[GENERATE_PLAN_READY]", "").trim() || "I have all the details I need. We are ready to generate your architectural plan."
+        });
       } else {
-        const nextMissing = missing[0];
-        let q = "";
-        if (nextMissing === "plot") q = "What is the approximate plot size?";
-        if (nextMissing === "bedrooms") q = "How many bedrooms do you need?";
-        if (nextMissing === "style") q = "What is your preferred architectural style?";
-        if (nextMissing === "budget") q = "What is the expected construction budget?";
-
-        const aiResponse = detectedCount > 0 
-          ? `I've noted that down. ${q}`
-          : `I see. Let's make sure we have the core details. ${q}`;
-        addMessage({ role: "assistant", content: aiResponse });
+        addMessage({ role: "assistant", content: reply });
       }
-    }, 800);
+
+      // Heuristic for memory chips based on AI response or user input
+      // (Optional: we could have the AI return structured data, but for now we'll keep simple heuristics)
+      const textLower = text.toLowerCase();
+      if (textLower.includes("sqft") && !memoryChips.find(c => c.label === "Plot")) {
+        const match = textLower.match(/(\d+,?\d*)/);
+        if (match) addMemoryChip({ label: "Plot", value: `${match[1]} sqft`, color: "blue" });
+      }
+      if ((textLower.includes("bed") || textLower.includes("bhk")) && !memoryChips.find(c => c.label === "Bedrooms")) {
+        const match = textLower.match(/(\d+)/);
+        if (match) addMemoryChip({ label: "Bedrooms", value: `${match[1]} Beds`, color: "cyan" });
+      }
+
+    } catch (error: any) {
+      setTyping(false);
+      addMessage({ 
+        role: "assistant", 
+        content: `I encountered an error: ${error.message}. Please check your connection or API configuration.` 
+      });
+    }
   };
 
   const handleSend = (e?: React.FormEvent) => {
@@ -130,22 +103,42 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
     processInput(text);
   };
 
-  const handleGeneratePlan = () => {
+  const handleGeneratePlan = async () => {
     setGenerating(true);
     setPlanGenerating(true);
     addMessage({ role: "user", content: "Generate Floor Plan" });
     setTyping(true);
 
-    setTimeout(() => {
-      setFloorPlan(DEMO_FLOOR_PLAN);
+    try {
+      const response = await fetch("/api/architect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          generateFeasibility: true,
+          messages: messages,
+          projectContext: { requirements, memoryChips, customer }
+        }),
+      });
+
+      const planData = await response.json();
+      if (!response.ok) throw new Error(planData.error || "Generation failed");
+
+      setFloorPlan(planData);
       setTyping(false);
       addMessage({ role: "assistant", content: "Your AI-generated floor plan is ready! I've optimised it for the local climate, Vastu alignment, and your budget range. Let me take you to the workspace." });
       setGenerating(false);
       setPlanGenerating(false);
-      showNotification("success", "Floor plan generated — Score: 86/100");
-      setTimeout(() => setStage("plan"), 800);
-    }, 3000);
+      showNotification("success", `Floor plan generated — Score: ${planData.plan_score?.total || 86}/100`);
+      setTimeout(() => setStage("plan"), 1200);
+    } catch (error: any) {
+      setGenerating(false);
+      setPlanGenerating(false);
+      setTyping(false);
+      showNotification("error", error.message);
+      addMessage({ role: "assistant", content: `Failed to generate plan: ${error.message}` });
+    }
   };
+
 
   const lastIsAI = messages[messages.length - 1]?.role === "assistant";
   

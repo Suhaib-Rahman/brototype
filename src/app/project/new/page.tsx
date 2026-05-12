@@ -70,6 +70,15 @@ export default function WorkspacePage() {
         display: "flex", alignItems: "center", padding: "0 16px", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="btn-icon mobile-only" 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            style={{ border: "none" }}
+          >
+            <Menu size={18} />
+          </button>
+
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div style={{
               width: "28px", height: "28px", borderRadius: "7px",
@@ -78,13 +87,13 @@ export default function WorkspacePage() {
             }}>
               <Building2 size={14} color="white" />
             </div>
-            <span className="font-display desktop-only" style={{ fontSize: "13px" }}>
+            <span className="font-display mobile-hidden" style={{ fontSize: "13px" }}>
               Architectural <span className="gradient-text">AI</span>
             </span>
           </Link>
           <div style={{ width: "1px", height: "20px", background: "var(--border)" }} className="desktop-only" />
           <span className="desktop-only" style={{ fontSize: "13px", color: "var(--t-muted)", fontWeight: 500 }}>
-            New Project
+            {STAGES[currentIdx]?.label}
           </span>
         </div>
 
@@ -110,46 +119,58 @@ export default function WorkspacePage() {
 
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           {demoMode && (
-            <div className="badge badge-cyan" style={{ fontSize: "10px" }}>DEMO MODE</div>
+            <div className="badge badge-cyan desktop-only" style={{ fontSize: "10px" }}>DEMO MODE</div>
           )}
           <button className="btn-icon desktop-only" onClick={() => setCommandPaletteOpen(true)} title="Command Palette (⌘K)">
             <Command size={14} />
           </button>
           {["plan", "3d", "cost", "summary"].includes(currentStage) && (
-            <button className="btn-icon desktop-only" onClick={() => setRightPanelOpen(!rightPanelOpen)}>
-              {rightPanelOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+            <button className="btn-icon" onClick={() => setRightPanelOpen(!rightPanelOpen)}>
+              {rightPanelOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
             </button>
           )}
         </div>
       </header>
 
       {/* ── Main Content ───────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
         {/* Left Sidebar */}
         <aside style={{
-          width: sidebarCollapsed ? "48px" : "200px",
+          position: "absolute", top: 0, bottom: 0, left: 0,
+          width: "240px",
+          zIndex: 100,
           borderRight: "1px solid var(--border)",
           background: "var(--surface-1)",
           flexShrink: 0,
           display: "flex", flexDirection: "column",
-          transition: "width 0.3s var(--ease-out)",
+          transform: (sidebarCollapsed && mounted && window.innerWidth < 768) ? "translateX(-100%)" : "translateX(0)",
+          transition: "all 0.3s var(--ease-out)",
           overflow: "hidden",
+          // On desktop, follow standard sidebar logic
+          ...(mounted && window.innerWidth >= 768 ? {
+            position: "relative",
+            width: sidebarCollapsed ? "48px" : "200px",
+            transform: "none"
+          } : {})
         }}>
           <div style={{ padding: sidebarCollapsed ? "8px 6px" : "12px", display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
             {STAGES.map((s, i) => {
               const isActive = currentStage === s.id;
               const isDone = i < currentIdx;
               return (
-                <button key={s.id} onClick={() => setStage(s.id)} style={{
+                <button key={s.id} onClick={() => {
+                  setStage(s.id);
+                  if (window.innerWidth < 768) setSidebarCollapsed(true);
+                }} style={{
                   display: "flex", alignItems: "center", gap: "10px",
-                  padding: sidebarCollapsed ? "10px 12px" : "10px 12px",
+                  padding: "10px 12px",
                   borderRadius: "var(--radius-sm)",
                   background: isActive ? "var(--accent-dim)" : "transparent",
                   border: "none", cursor: "pointer", transition: "all 0.2s", width: "100%", textAlign: "left",
                   color: isActive ? "var(--accent)" : isDone ? "var(--emerald)" : "var(--t-muted)",
                 }}>
                   <s.icon size={16} style={{ flexShrink: 0 }} />
-                  {!sidebarCollapsed && (
+                  {(!sidebarCollapsed || (mounted && window.innerWidth < 768)) && (
                     <span style={{ fontSize: "13px", fontWeight: isActive ? 600 : 400, whiteSpace: "nowrap" }}>
                       {s.label}
                     </span>
@@ -158,7 +179,7 @@ export default function WorkspacePage() {
               );
             })}
           </div>
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
+          <button className="desktop-only" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{
             padding: "12px", borderTop: "1px solid var(--border)",
             background: "transparent", border: "none", cursor: "pointer", color: "var(--t-muted)",
             display: "flex", justifyContent: "center",
@@ -193,18 +214,26 @@ export default function WorkspacePage() {
         <AnimatePresence>
           {showRightPanel && (
             <motion.aside
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 340, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
+              initial={{ width: 0, opacity: 0, x: 20 }}
+              animate={{ 
+                width: (mounted && window.innerWidth < 768) ? "100%" : 340, 
+                opacity: 1,
+                x: 0
+              }}
+              exit={{ width: 0, opacity: 0, x: 20 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{
+                position: (mounted && window.innerWidth < 768) ? "absolute" : "relative",
+                top: 0, bottom: 0, right: 0,
                 borderLeft: "1px solid var(--border)",
                 background: "var(--surface-1)",
                 flexShrink: 0,
                 overflow: "hidden",
+                zIndex: 200,
+                boxShadow: (mounted && window.innerWidth < 768) ? "-10px 0 30px rgba(0,0,0,0.3)" : "none"
               }}
             >
-              <div style={{ width: "340px", height: "100%", overflowY: "auto" }}>
+              <div style={{ width: (mounted && window.innerWidth < 768) ? "100%" : "340px", height: "100%", overflowY: "auto" }}>
                 <IntelligencePanel />
               </div>
             </motion.aside>

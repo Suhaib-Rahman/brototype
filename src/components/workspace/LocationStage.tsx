@@ -104,27 +104,29 @@ export default function LocationStage({ onNext }: { onNext: () => void }) {
     { icon: Wind, label: "Wind", value: analysis.windDirection, color: "#3B82F6" },
   ] : [];
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+
   return (
-    <div style={{ height: "100%", display: "flex" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: isMobile ? "column" : "row", overflow: "hidden" }}>
       {/* Map Section */}
-      <div style={{ flex: 1, position: "relative" }}>
+      <div style={{ flex: 1, position: "relative", minHeight: isMobile ? "300px" : "auto" }}>
         {/* Search Overlay */}
         <div style={{
-          position: "absolute", top: "20px", left: "20px", right: "20px", zIndex: 1000,
+          position: "absolute", top: isMobile ? "10px" : "20px", left: isMobile ? "10px" : "20px", right: isMobile ? "10px" : "20px", zIndex: 1000,
           display: "flex", gap: "8px",
         }}>
           <div style={{ flex: 1, position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--t-muted)" }} />
+            <Search size={14} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--t-muted)" }} />
             <input
               className="input-field"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search location, pincode, or coordinates..."
-              style={{ paddingLeft: "40px", background: "var(--glass)", backdropFilter: "blur(20px)", border: "1px solid var(--border-hover)" }}
+              placeholder="Search location..."
+              style={{ paddingLeft: "36px", background: "var(--glass)", backdropFilter: "blur(20px)", border: "1px solid var(--border-hover)", fontSize: "13px" }}
             />
           </div>
-          <button className="btn-accent" onClick={handleAnalyze} disabled={isAnalyzing} style={{ padding: "12px 24px", flexShrink: 0 }}>
-            {isAnalyzing ? <Loader2 size={16} className="spin" /> : <><MapPin size={14} /> Analyse</>}
+          <button className="btn-accent" onClick={handleAnalyze} disabled={isAnalyzing} style={{ padding: "8px 16px", flexShrink: 0, fontSize: "13px" }}>
+            {isAnalyzing ? <Loader2 size={14} className="spin" /> : <><MapPin size={14} /><span className="mobile-hidden"> Analyse</span></>}
           </button>
         </div>
 
@@ -133,100 +135,62 @@ export default function LocationStage({ onNext }: { onNext: () => void }) {
 
       {/* Right Panel — Location Intelligence */}
       <div style={{
-        width: "360px", borderLeft: "1px solid var(--border)", background: "var(--surface-1)",
-        overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "20px",
+        width: isMobile ? "100%" : "360px", 
+        borderLeft: isMobile ? "none" : "1px solid var(--border)",
+        borderTop: isMobile ? "1px solid var(--border)" : "none",
+        background: "var(--surface-1)",
+        overflowY: "auto", padding: isMobile ? "20px" : "24px", display: "flex", flexDirection: "column", gap: "16px",
         flexShrink: 0,
       }}>
         <div>
-          <div className="badge badge-blue" style={{ marginBottom: "12px" }}>
+          <div className="badge badge-blue" style={{ marginBottom: "8px" }}>
             <MapPin size={10} /> Location Intelligence
           </div>
-          <h2 className="font-display" style={{ fontSize: "1.4rem", marginBottom: "4px" }}>
+          <h2 className="font-display" style={{ fontSize: "1.2rem", marginBottom: "4px" }}>
             {analyzed ? "Kochi, Kerala" : "Select Location"}
           </h2>
-          <p style={{ fontSize: "13px", color: "var(--t-muted)" }}>
-            {analyzed ? "9.9312° N, 76.2673° E · Elevation: 0–10m" : "Pin your plot location on the map to begin analysis."}
+          <p style={{ fontSize: "12px", color: "var(--t-muted)" }}>
+            {analyzed ? "9.9312° N, 76.2673° E" : "Pin your plot location to begin."}
           </p>
         </div>
 
         {analyzed && analysis && (
           <>
             {/* Climate Insights */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
               {insights.map((ins, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
                   className="card"
-                  style={{ padding: "14px", borderRadius: "var(--radius-md)" }}
+                  style={{ padding: "10px", borderRadius: "8px" }}
                 >
-                  <ins.icon size={16} color={ins.color} style={{ marginBottom: "8px" }} />
-                  <div style={{ fontSize: "11px", color: "var(--t-muted)", marginBottom: "2px" }}>{ins.label}</div>
-                  <div style={{ fontSize: "13px", fontWeight: 600 }}>{ins.value}</div>
+                  <ins.icon size={14} color={ins.color} style={{ marginBottom: "6px" }} />
+                  <div style={{ fontSize: "10px", color: "var(--t-muted)" }}>{ins.label}</div>
+                  <div style={{ fontSize: "12px", fontWeight: 600 }}>{ins.value}</div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Zoning Rules */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="card" style={{ padding: "20px", borderRadius: "var(--radius-lg)" }}>
-              <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <CheckCircle2 size={14} color="var(--emerald)" /> Building Regulations
+            {/* Building Regs Card */}
+            <div className="card" style={{ padding: "16px", borderRadius: "12px", fontSize: "12px" }}>
+              <div style={{ fontWeight: 600, marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <CheckCircle2 size={12} color="var(--emerald)" /> Building Rules
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px", color: "var(--t-secondary)" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Authority</span><span style={{ fontWeight: 600, color: "var(--t-primary)" }}>{analysis.zoningRules.authority}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Max FAR</span><span style={{ fontWeight: 600, color: "var(--t-primary)" }}>{analysis.zoningRules.maxFAR}</span>
+                  <span>Max FAR</span><span style={{ fontWeight: 600 }}>{analysis.zoningRules.maxFAR}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Coverage</span><span style={{ fontWeight: 600, color: "var(--t-primary)" }}>{analysis.zoningRules.maxCoverage}%</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Setbacks (F/S/R)</span><span style={{ fontWeight: 600, color: "var(--t-primary)" }}>{analysis.zoningRules.frontSetback}/{analysis.zoningRules.sideSetback}/{analysis.zoningRules.rearSetback}m</span>
+                  <span>Coverage</span><span style={{ fontWeight: 600 }}>{analysis.zoningRules.maxCoverage}%</span>
                 </div>
               </div>
-            </motion.div>
-
-            {/* AI Insights */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} style={{
-              padding: "16px", borderRadius: "var(--radius-md)",
-              background: "var(--gradient-glow)", border: "1px solid rgba(59,130,246,0.15)",
-            }}>
-              <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                <Sparkles size={14} color="var(--cyan)" style={{ marginTop: "2px", flexShrink: 0 }} />
-                <div style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
-                  <strong style={{ color: "var(--t-primary)" }}>AI Insight: </strong>
-                  {analysis.climate.includes("Tropical")
-                    ? "High humidity climate requires maximised cross-ventilation. Recommend raised plinth (600mm+) for monsoon protection with south-east kitchen orientation."
-                    : "Temperate climate suggests maximising south-facing glazing for passive solar heating and high-grade thermal insulation on external walls."}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Land Sketch Upload */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} style={{
-              padding: "20px", borderRadius: "var(--radius-lg)", border: "1px dashed var(--border)",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "12px",
-              cursor: "pointer", background: "var(--surface-1)"
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--surface-2)"}
-              onMouseLeave={e => e.currentTarget.style.background = "var(--surface-1)"}
-            >
-              <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid var(--border)" }}>
-                <Map size={20} color="var(--t-primary)" />
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px" }}>Upload Land Sketch</div>
-                <div style={{ fontSize: "12px", color: "var(--t-muted)" }}>PNG, JPG, or PDF (Max 5MB)</div>
-              </div>
-            </motion.div>
+            </div>
 
             {/* Continue Button */}
-            <button className="btn-primary" onClick={onNext} style={{ width: "100%", padding: "14px" }}>
-              Continue to Requirements <ArrowRight size={16} />
+            <button className="btn-primary" onClick={onNext} style={{ width: "100%", padding: "12px", fontSize: "14px", marginTop: "auto" }}>
+              Continue <ArrowRight size={14} />
             </button>
           </>
         )}

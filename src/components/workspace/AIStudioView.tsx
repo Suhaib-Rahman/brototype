@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, User, Loader2, ArrowRight, MessageSquare } from "lucide-react";
+import { Sparkles, Send, User, Loader2, ArrowRight, MessageSquare, Paperclip, MapPin } from "lucide-react";
 import { useAIEngine } from "@/store/useAIEngine";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -70,10 +70,7 @@ export function AIStudioView() {
       const data = await response.json();
       
       if (!response.ok) {
-        // Handle API errors (Rate limits, Quota, etc.) gracefully
         const errorMsg = data.error?.message || data.error || "An unexpected error occurred.";
-        console.error("Architectural AI Error:", errorMsg);
-        
         const aiErrorMsg: Message = { 
           id: (Date.now() + 1).toString(), 
           sender: "ai", 
@@ -90,11 +87,10 @@ export function AIStudioView() {
         setShowSummary(true);
       }
     } catch (error: any) {
-      console.error("Failed to connect to Architectural AI:", error);
       const networkErrorMsg: Message = { 
         id: (Date.now() + 1).toString(), 
         sender: "ai", 
-        text: "🚨 Connection Failure: Unable to reach the Architectural Intelligence Engine. Please check your internet connection." 
+        text: "🚨 Connection Failure: Unable to reach the Architectural Intelligence Engine." 
       };
       setMessages(prev => [...prev, networkErrorMsg]);
     } finally {
@@ -124,42 +120,43 @@ export function AIStudioView() {
     <div style={{ height: "100%", position: "relative", display: "flex", flexDirection: "column", background: "var(--bg)" }}>
       
       {/* Header */}
-      <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--surface-1)", zIndex: 10 }}>
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--surface-1)", zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <Sparkles size={16} color="white" />
           </div>
           <div>
-            <h1 className="font-display" style={{ fontSize: "16px", fontWeight: 600 }}>Architectural Intelligence Studio</h1>
-            <p style={{ fontSize: "11px", color: "var(--t-muted)" }}>Stage 01: Human Understanding & Feasibility</p>
+            <h1 className="font-display" style={{ fontSize: "15px", fontWeight: 600 }}>Architectural Intelligence Studio</h1>
+            <p style={{ fontSize: "10px", color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Phase 1: Lifestyle & Feasibility</p>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px 120px" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 24px 160px" }}>
+        <div style={{ maxWidth: "800px", margin: "0 auto", width: "100%" }}>
           <AnimatePresence mode="wait">
             {!showSummary ? (
-              <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                {messages.map((msg) => (
+              <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+                {messages.map((msg, idx) => (
                   <motion.div 
                     key={msg.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{ 
-                      display: "flex", gap: "16px", 
+                      display: "flex", gap: "20px", 
                       flexDirection: msg.sender === "user" ? "row-reverse" : "row",
                       alignItems: "flex-start" 
                     }}
                   >
                     <div style={{ 
-                      width: "32px", height: "32px", borderRadius: "8px", flexShrink: 0, 
+                      width: "36px", height: "36px", borderRadius: "10px", flexShrink: 0, 
                       display: "flex", alignItems: "center", justifyContent: "center",
                       background: msg.sender === "user" ? "var(--surface-3)" : "var(--gradient-ai)",
-                      color: "white"
+                      color: "white",
+                      boxShadow: msg.sender === "ai" ? "0 4px 15px rgba(59,130,246,0.3)" : "none"
                     }}>
-                      {msg.sender === "user" ? <User size={16} /> : <Sparkles size={16} />}
+                      {msg.sender === "user" ? <User size={18} /> : <Sparkles size={18} />}
                     </div>
                     <div style={{ 
                       maxWidth: "85%", 
@@ -174,8 +171,8 @@ export function AIStudioView() {
                       whiteSpace: "pre-wrap"
                     }}>
                       {msg.text.replace("[GENERATE_PLAN_READY]", "")}
-
-                      {/* Quick Start Chips - Only after first AI message */}
+                      
+                      {/* Quick Start Chips */}
                       {idx === 0 && messages.length === 1 && (
                         <div style={{ marginTop: "24px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
                           {quickStarts.map((chip, i) => (
@@ -216,7 +213,7 @@ export function AIStudioView() {
                 )}
               </motion.div>
             ) : (
-              <motion.div key="summary" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: "40px", borderRadius: "24px", background: "var(--surface-1)", border: "1px solid var(--accent)", position: "relative", marginTop: "40px" }}>
+              <motion.div key="summary" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: "40px", borderRadius: "24px", background: "var(--surface-1)", border: "1px solid var(--accent)", position: "relative", marginTop: "40px", boxShadow: "0 20px 50px rgba(0,0,0,0.2)" }}>
                 <div style={{ textAlign: "center", marginBottom: "40px" }}>
                   <div className="badge badge-emerald" style={{ marginBottom: "16px" }}>
                     <Sparkles size={10} /> Intelligence Synthesis Complete
@@ -225,27 +222,27 @@ export function AIStudioView() {
                   <p style={{ color: "var(--t-muted)", fontSize: "14px" }}>Stages 01–03: Lifestyle, Requirement & Regulatory Intelligence</p>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: window.innerWidth < 640 ? "1fr" : "1fr 1fr", gap: "20px", marginBottom: "40px" }}>
-                  <div className="card" style={{ padding: "20px", borderRadius: "16px" }}>
-                    <h3 style={{ fontSize: "13px", fontWeight: 700, marginBottom: "12px", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Lifestyle Profile</h3>
-                    <p style={{ fontSize: "14px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "40px" }}>
+                  <div className="card" style={{ padding: "24px", borderRadius: "16px", background: "var(--surface-2)" }}>
+                    <h3 style={{ fontSize: "12px", fontWeight: 700, marginBottom: "12px", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Lifestyle Profile</h3>
+                    <p style={{ fontSize: "14px", color: "var(--t-secondary)", lineHeight: 1.7 }}>
                       Archetype: Modern Professional. Prioritizes seamless indoor-outdoor flow and dedicated spatial focus for work-life balance.
                     </p>
                   </div>
-                  <div className="card" style={{ padding: "20px", borderRadius: "16px" }}>
-                    <h3 style={{ fontSize: "13px", fontWeight: 700, marginBottom: "12px", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Regulatory Outlook</h3>
-                    <p style={{ fontSize: "14px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
-                      Zone: Residential High-Density. Max FAR: 2.5. Site supports up to G+3 levels with 60% ground coverage based on inferred coordinates.
+                  <div className="card" style={{ padding: "24px", borderRadius: "16px", background: "var(--surface-2)" }}>
+                    <h3 style={{ fontSize: "12px", fontWeight: 700, marginBottom: "12px", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Regulatory Outlook</h3>
+                    <p style={{ fontSize: "14px", color: "var(--t-secondary)", lineHeight: 1.7 }}>
+                      Zone: Residential High-Density. Max FAR: 2.5. Site supports up to G+3 levels with 60% ground coverage.
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: window.innerWidth < 640 ? "column" : "row", gap: "16px" }}>
-                  <button onClick={() => setShowSummary(false)} className="btn-secondary" style={{ flex: 1, padding: "16px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                    <MessageSquare size={16} /> Edit Requirements
+                <div style={{ display: "flex", gap: "16px" }}>
+                  <button onClick={() => setShowSummary(false)} className="btn-secondary" style={{ flex: 1, padding: "18px", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    <MessageSquare size={18} /> Edit Requirements
                   </button>
-                  <button onClick={handleGeneratePlan} disabled={isGeneratingPlan} className="btn-primary" style={{ flex: 1, padding: "16px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                    {isGeneratingPlan ? <Loader2 size={16} className="spin" /> : <>Confirm & Start Planning <ArrowRight size={16} /></>}
+                  <button onClick={handleGeneratePlan} disabled={isGeneratingPlan} className="btn-primary" style={{ flex: 1, padding: "18px", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    {isGeneratingPlan ? <Loader2 size={18} className="spin" /> : <>Confirm & Start Planning <ArrowRight size={18} /></>}
                   </button>
                 </div>
               </motion.div>
@@ -258,19 +255,24 @@ export function AIStudioView() {
       {/* Bottom Input Area */}
       <AnimatePresence>
         {!showSummary && (
-          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} style={{ 
-            background: "linear-gradient(to top, var(--bg) 60%, transparent)", 
-            padding: "16px 16px 32px", 
-            position: "fixed", 
-            bottom: 0, 
-            left: window.innerWidth >= 768 ? (sidebarCollapsed ? "48px" : "200px") : 0, 
-            right: 0,
-            transition: "left 0.3s var(--ease-out)",
-            zIndex: 50,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center"
-          }}>
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            exit={{ y: 20, opacity: 0 }} 
+            style={{ 
+              background: "linear-gradient(to top, var(--bg) 80%, transparent)", 
+              padding: "24px 24px 40px", 
+              position: "fixed", 
+              bottom: 0, 
+              left: window.innerWidth >= 768 ? (sidebarCollapsed ? "48px" : "200px") : 0, 
+              right: 0,
+              transition: "left 0.3s var(--ease-out)",
+              zIndex: 50,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center"
+            }}
+          >
             <div style={{ maxWidth: "800px", width: "100%" }}>
               {/* Thinking Status */}
               {isLoading && (
@@ -282,9 +284,10 @@ export function AIStudioView() {
 
               <form onSubmit={handleSend} style={{ position: "relative" }}>
                 <div style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", display: "flex", gap: "12px", color: "var(--t-muted)" }}>
-                  <Paperclip size={18} />
-                  <MapPin size={18} />
+                  <Paperclip size={18} style={{ cursor: "pointer" }} />
+                  <MapPin size={18} style={{ cursor: "pointer" }} />
                 </div>
+                
                 <input 
                   type="text" 
                   value={input}
@@ -294,25 +297,26 @@ export function AIStudioView() {
                   className="input-field"
                   style={{ 
                     height: "56px", paddingLeft: "80px", paddingRight: "60px", background: "var(--surface-1)", 
-                    boxShadow: "0 10px 40px rgba(0,0,0,0.2)", border: "1px solid var(--border-hover)",
-                    fontSize: "15px"
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.15)", border: "1px solid var(--border-hover)",
+                    fontSize: "15px", borderRadius: "18px"
                   }}
                 />
-              <button 
-                type="submit" 
-                disabled={!input.trim() || isLoading || isGeneratingPlan} 
-                style={{ 
-                  position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", 
-                  background: (!input.trim() || isLoading) ? "var(--surface-3)" : "var(--accent)", 
-                  border: "none", width: "34px", height: "34px", borderRadius: "8px", 
-                  display: "flex", alignItems: "center", justifyContent: "center", 
-                  color: (!input.trim() || isLoading) ? "var(--t-muted)" : "var(--bg)",
-                  transition: "all 0.2s"
-                }}
-              >
-                <Send size={16} />
-              </button>
-            </form>
+                
+                <button 
+                  type="submit" 
+                  disabled={!input.trim() || isLoading || isGeneratingPlan} 
+                  style={{ 
+                    position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", 
+                    background: (!input.trim() || isLoading) ? "var(--surface-3)" : "var(--gradient-ai)", 
+                    border: "none", width: "36px", height: "36px", borderRadius: "10px", 
+                    display: "flex", alignItems: "center", justifyContent: "center", 
+                    color: "white", transition: "all 0.2s"
+                  }}
+                >
+                  <Send size={18} />
+                </button>
+              </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

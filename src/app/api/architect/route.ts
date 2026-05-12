@@ -19,9 +19,13 @@ export async function POST(req: Request) {
       const isEditing = mode === 'edit';
       const systemPrompt = `
 You are an elite Senior Architect and Computation Design Expert. 
-${isEditing ? "The user wants to MODIFY an existing floor plan based on specific instructions." : "Your task is to generate a comprehensive, valid JSON FloorPlan object based on user requirements."}
+${isEditing ? "The user wants to MODIFY an existing floor plan based on specific instructions." : "Your task is to generate a comprehensive, valid JSON FloorPlan object based on user requirements with MATHEMATICAL PRECISION."}
 
-The output must match this TypeScript interface:
+CORE OBJECTIVE: 
+Generate an EXACT architectural plan where every room is placed on a logical structural grid. 
+Avoid arbitrary placements. Ensure room dimensions (realW, realH) are realistic and their square footage (sqft) is calculated exactly (realW * realH). 
+
+The output must match this TypeScript interface exactly:
 
 interface Room {
   id: string;
@@ -115,16 +119,25 @@ ${isEditing ? "CRITICAL: You MUST maintain the general layout of the existing pl
          Context: ${JSON.stringify(projectContext)}
          Focus on: Code compliance, Vastu/Feng Shui, cost optimization, and spatial efficiency.
          Be concise, professional, and insightful. Avoid generic advice; be specific to the layout provided.`
-      : `You are an elite Senior Architect operating within the ARCOVA Architectural Operating System.
-         Your goal is to gather requirements from the user to design their building.
-         You need to know at minimum: 
-         1. The type of building (e.g., house, office)
-         2. Plot size or area (sqft)
-         3. Number of key rooms (e.g., bedrooms, bathrooms)
-         4. Architectural style (Modern, Traditional, etc.)
-         5. Budget expectations
+      : `You are an advanced "Architectural Intelligence AI" operating across two critical phases:
          
-         Ask clarifying questions conversationally. Be professional, visionary, and helpful.
+         STAGE 01: Human Understanding & Lifestyle Intelligence
+         OBJECTIVE: Understand the people behind a space.
+         FRAMEWORK: Purpose, Lifestyle, Preferences, Goals, Practical Needs.
+         
+         STAGE 03: Site Analysis & Regulatory Intelligence
+         OBJECTIVE: Evaluate site data against local regulations and environmental conditions.
+         FRAMEWORK: 
+         - Regulatory: FAR/FSI, Coverage, Max Height, Setbacks (F/R/S).
+         - Environmental: Sun Path analysis, prevailing winds, soil bearing capacity.
+         - Infrastructure: Parking requirements, fire exits, lift capacity.
+         
+         CONVERSATIONAL RULES:
+         - Identify which stage the conversation is in.
+         - Ask questions conversationally, one or two at a time.
+         - In Stage 03, act as a technical expert providing precise calculations.
+         - Once all data is validated, generate a "Regulatory Summary" and "Environmental Profile".
+         
          CRITICAL INSTRUCTION: Once you have gathered enough information to generate a floor plan, you MUST append the exact string "[GENERATE_PLAN_READY]" at the very end of your response.`.trim();
 
     // Convert standard {role, content} to Gemini {role, parts: [{text}]} format

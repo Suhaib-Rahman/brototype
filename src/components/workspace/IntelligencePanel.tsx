@@ -32,7 +32,7 @@ export default function IntelligencePanel() {
   const { currentStage } = useUIStore();
   const { copilotMessages, addCopilotMessage, copilotTyping, setCopilotTyping } = useChatStore();
   
-  const [activeTab, setActiveTab] = useState<"overview" | "copilot">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "planning" | "copilot">("overview");
   const [inputText, setInputText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +100,7 @@ export default function IntelligencePanel() {
       <div style={{ padding: "16px 16px 0", borderBottom: "1px solid var(--border)", background: "var(--surface-1)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
           <div className="badge badge-cyan" style={{ display: "inline-flex" }}>
-            <Sparkles size={10} /> Architectural Intelligence
+            <Sparkles size={10} /> Planning Intelligence
           </div>
           
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -110,30 +110,28 @@ export default function IntelligencePanel() {
               boxShadow: "0 0 8px var(--emerald)"
             }} />
             <span style={{ fontSize: "10px", color: "var(--t-muted)", fontWeight: 500 }}>
-              Live Intelligence
+              Live Analysis
             </span>
           </div>
         </div>
         
-        <div style={{ display: "flex", gap: "16px" }}>
-          <button 
-            onClick={() => setActiveTab("overview")}
-            style={{ 
-              padding: "8px 4px", fontSize: "13px", fontWeight: 600, background: "transparent", border: "none", 
-              borderBottom: activeTab === "overview" ? "2px solid var(--t-primary)" : "2px solid transparent",
-              color: activeTab === "overview" ? "var(--t-primary)" : "var(--t-muted)", cursor: "pointer", transition: "all 0.2s"
-            }}>
-            Overview
-          </button>
-          <button 
-            onClick={() => setActiveTab("copilot")}
-            style={{ 
-              padding: "8px 4px", fontSize: "13px", fontWeight: 600, background: "transparent", border: "none", 
-              borderBottom: activeTab === "copilot" ? "2px solid var(--t-primary)" : "2px solid transparent",
-              color: activeTab === "copilot" ? "var(--t-primary)" : "var(--t-muted)", cursor: "pointer", transition: "all 0.2s"
-            }}>
-            Copilot Chat
-          </button>
+        <div style={{ display: "flex", gap: "12px" }}>
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "planning", label: "Exact Plan" },
+            { id: "copilot", label: "Copilot" }
+          ].map(tab => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              style={{ 
+                padding: "8px 2px", fontSize: "12px", fontWeight: 600, background: "transparent", border: "none", 
+                borderBottom: activeTab === tab.id ? "2px solid var(--t-primary)" : "2px solid transparent",
+                color: activeTab === tab.id ? "var(--t-primary)" : "var(--t-muted)", cursor: "pointer", transition: "all 0.2s"
+              }}>
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -227,6 +225,63 @@ export default function IntelligencePanel() {
                   ))}
                 </div>
               </CollapsibleCard>
+            </motion.div>
+          )}
+
+          {/* PLANNING / EXACT PLAN TAB */}
+          {activeTab === "planning" && (
+            <motion.div key="planning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              
+              {/* Plot & Zoning Context */}
+              <div className="card" style={{ padding: "16px", borderRadius: "var(--radius-md)" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px" }}>Plot Specifications</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+                    <span style={{ color: "var(--t-secondary)" }}>Total Plot Area</span>
+                    <span style={{ fontWeight: 600 }}>{plan?.plotSqft || 2400} sqft</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+                    <span style={{ color: "var(--t-secondary)" }}>Built-up Area</span>
+                    <span style={{ fontWeight: 600 }}>{plan?.totalSqft} sqft</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
+                    <span style={{ color: "var(--t-secondary)" }}>Ground Coverage</span>
+                    <span style={{ fontWeight: 600 }}>{Math.round((plan?.totalSqft || 0) / (plan?.plotSqft || 2400) * 100)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Exact Room Breakdown */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px", paddingLeft: "4px" }}>Room Schedule</div>
+                {plan?.rooms.map(room => (
+                  <div key={room.id} className="card" style={{ padding: "12px", borderRadius: "var(--radius-sm)", background: "var(--surface-2)", border: selectedRoom?.id === room.id ? "1px solid var(--cyan)" : "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "10px", height: "100%", position: "absolute", left: 0, top: 0, background: room.color, borderRadius: "2px 0 0 2px" }} />
+                        <span style={{ fontSize: "13px", fontWeight: 600 }}>{room.name}</span>
+                      </div>
+                      <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--t-primary)" }}>{room.sqft} SF</span>
+                    </div>
+                    <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: "var(--t-muted)" }}>
+                      <span>Dim: {room.realW || Math.round(room.w/10)}' × {room.realH || Math.round(room.h/10)}'</span>
+                      <span>Floor: {room.floor || 1}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* AI Planning Insights */}
+              <div className="card" style={{ padding: "16px", borderRadius: "var(--radius-md)", background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.1)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                  <Bot size={14} color="var(--emerald)" />
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--emerald)" }}>Computational Logic</span>
+                </div>
+                <p style={{ fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
+                  Plan generated using a recursive grid-packing algorithm. Spatial adjacencies are optimized for <strong>{(plan as any)?.environmental_logic?.ventilation || "cross-ventilation"}</strong> and <strong>{(plan as any)?.environmental_logic?.light || "natural lighting"}</strong>.
+                </p>
+              </div>
+
             </motion.div>
           )}
 

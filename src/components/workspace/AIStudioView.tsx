@@ -52,12 +52,12 @@ export function AIStudioView() {
         useAIEngine.setState({ rooms: result.rooms });
       }
 
-      // Automatically transition to the CAD Plan viewer
-      setStage("plan");
+      // Automatically transition to the Location plotting
+      setStage("location");
     } catch (error) {
       console.error(error);
       // Fallback transition
-      setStage("plan");
+      setStage("location");
     } finally {
       setIsGeneratingPlan(false);
     }

@@ -23,7 +23,26 @@ export function AIStudioView() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [thinkingStatus, setThinkingStatus] = useState("Architectural engine initializing...");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isLoading) {
+      const statuses = [
+        "Analyzing project intent...",
+        "Extracting site parameters...",
+        "Evaluating local zoning logic...",
+        "Calculating spatial feasibility...",
+        "Synthesizing architectural brief..."
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+        setThinkingStatus(statuses[i % statuses.length]);
+        i++;
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,6 +112,14 @@ export function AIStudioView() {
 
   if (!mounted) return null;
 
+  const quickStarts = [
+    { label: "Residential Project", value: "Residential" },
+    { label: "Commercial Space", value: "Commercial" },
+    { label: "Mixed-Use Development", value: "Mixed-Use" },
+    { label: "I have a plot", value: "I already have a plot" },
+    { label: "Looking for site", value: "I am currently looking for a site" },
+  ];
+
   return (
     <div style={{ height: "100%", position: "relative", display: "flex", flexDirection: "column", background: "var(--bg)" }}>
       
@@ -135,31 +162,53 @@ export function AIStudioView() {
                       {msg.sender === "user" ? <User size={16} /> : <Sparkles size={16} />}
                     </div>
                     <div style={{ 
-                      maxWidth: "80%", 
-                      padding: "14px 18px", 
-                      borderRadius: "16px",
+                      maxWidth: "85%", 
+                      padding: "16px 20px", 
+                      borderRadius: "20px",
                       background: msg.sender === "user" ? "var(--surface-2)" : "var(--surface-1)",
                       border: "1px solid var(--border)",
                       fontSize: "14px",
-                      lineHeight: 1.6,
+                      lineHeight: 1.7,
                       color: "var(--t-primary)",
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+                      boxShadow: "0 2px 15px rgba(0,0,0,0.03)",
                       whiteSpace: "pre-wrap"
                     }}>
                       {msg.text.replace("[GENERATE_PLAN_READY]", "")}
+
+                      {/* Quick Start Chips - Only after first AI message */}
+                      {idx === 0 && messages.length === 1 && (
+                        <div style={{ marginTop: "24px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                          {quickStarts.map((chip, i) => (
+                            <button 
+                              key={i} 
+                              onClick={() => setInput(chip.value)}
+                              style={{ 
+                                padding: "8px 16px", borderRadius: "100px", background: "var(--surface-2)", 
+                                border: "1px solid var(--border)", fontSize: "12px", color: "var(--t-secondary)",
+                                cursor: "pointer", transition: "all 0.2s"
+                              }}
+                            >
+                              {chip.label}
+                            </button>
+                          ))}
+                          <button style={{ padding: "8px 16px", borderRadius: "100px", background: "var(--surface-2)", border: "1px dashed var(--border)", fontSize: "12px", color: "var(--t-muted)", cursor: "pointer" }}>
+                            📎 Upload Site Data
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
 
                 {isLoading && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", gap: "16px" }}>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Loader2 size={16} className="spin" color="white" />
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", gap: "20px" }}>
+                    <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Loader2 size={18} className="spin" color="white" />
                     </div>
-                    <div style={{ flex: 1, paddingTop: "8px" }}>
+                    <div style={{ flex: 1, paddingTop: "10px" }}>
                       <div style={{ display: "flex", gap: "4px" }}>
                         {[0, 1, 2].map(i => (
-                          <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} style={{ width: "5px", height: "5px", background: "var(--accent)", borderRadius: "50%" }} />
+                          <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} style={{ width: "6px", height: "6px", background: "var(--accent)", borderRadius: "50%" }} />
                         ))}
                       </div>
                     </div>
@@ -217,22 +266,38 @@ export function AIStudioView() {
             left: window.innerWidth >= 768 ? (sidebarCollapsed ? "48px" : "200px") : 0, 
             right: 0,
             transition: "left 0.3s var(--ease-out)",
-            zIndex: 50
+            zIndex: 50,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
           }}>
-            <form onSubmit={handleSend} style={{ maxWidth: "800px", margin: "0 auto", position: "relative" }}>
-              <input 
-                type="text" 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading || isGeneratingPlan}
-                placeholder="Ask your Architect or provide more details..." 
-                className="input-field"
-                style={{ 
-                  height: "56px", paddingRight: "60px", background: "var(--surface-1)", 
-                  boxShadow: "0 10px 40px rgba(0,0,0,0.2)", border: "1px solid var(--border-hover)",
-                  fontSize: "15px"
-                }}
-              />
+            <div style={{ maxWidth: "800px", width: "100%" }}>
+              {/* Thinking Status */}
+              {isLoading && (
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px", paddingLeft: "12px" }}>
+                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--cyan)", boxShadow: "0 0 8px var(--cyan)" }} />
+                  <span style={{ fontSize: "11px", color: "var(--t-muted)", fontWeight: 500 }}>{thinkingStatus}</span>
+                </motion.div>
+              )}
+
+              <form onSubmit={handleSend} style={{ position: "relative" }}>
+                <div style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", display: "flex", gap: "12px", color: "var(--t-muted)" }}>
+                  <Paperclip size={18} />
+                  <MapPin size={18} />
+                </div>
+                <input 
+                  type="text" 
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={isLoading || isGeneratingPlan}
+                  placeholder="Describe your vision or drop a location link..." 
+                  className="input-field"
+                  style={{ 
+                    height: "56px", paddingLeft: "80px", paddingRight: "60px", background: "var(--surface-1)", 
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.2)", border: "1px solid var(--border-hover)",
+                    fontSize: "15px"
+                  }}
+                />
               <button 
                 type="submit" 
                 disabled={!input.trim() || isLoading || isGeneratingPlan} 

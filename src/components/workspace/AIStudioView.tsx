@@ -49,7 +49,20 @@ export function AIStudioView() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      
+      if (!response.ok) {
+        // Handle API errors (Rate limits, Quota, etc.) gracefully
+        const errorMsg = data.error?.message || data.error || "An unexpected error occurred.";
+        console.error("Architectural AI Error:", errorMsg);
+        
+        const aiErrorMsg: Message = { 
+          id: (Date.now() + 1).toString(), 
+          sender: "ai", 
+          text: `🚨 Intelligence Offline: ${errorMsg}. Please wait a moment or check your API quota.` 
+        };
+        setMessages(prev => [...prev, aiErrorMsg]);
+        return;
+      }
 
       const aiMsg: Message = { id: (Date.now() + 1).toString(), sender: "ai", text: data.reply };
       setMessages(prev => [...prev, aiMsg]);
@@ -57,8 +70,14 @@ export function AIStudioView() {
       if (data.reply.includes("[GENERATE_PLAN_READY]")) {
         setShowSummary(true);
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("Failed to connect to Architectural AI:", error);
+      const networkErrorMsg: Message = { 
+        id: (Date.now() + 1).toString(), 
+        sender: "ai", 
+        text: "🚨 Connection Failure: Unable to reach the Architectural Intelligence Engine. Please check your internet connection." 
+      };
+      setMessages(prev => [...prev, networkErrorMsg]);
     } finally {
       setIsLoading(false);
     }

@@ -3,30 +3,37 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2, MapPin, MessageSquare, Layout, Box, BarChart3, FileText,
-  ChevronLeft, ChevronRight, Sparkles, Command, Search, PanelRightClose,
-  PanelRightOpen, Menu, ArrowRight, User, PenTool
+  Building2, MapPin, Layout, Box, BarChart3, FileText,
+  ChevronLeft, ChevronRight, Sparkles, Command, PanelRightClose,
+  PanelRightOpen, Menu, PenTool, Database, Users
 } from "lucide-react";
 import { useUIStore, WorkspaceStage } from "@/store/useUIStore";
-import OnboardingSystem from "@/components/workspace/OnboardingSystem";
 import { AIStudioView } from "@/components/workspace/AIStudioView";
 import LocationStage from "@/components/workspace/LocationStage";
 import CadStage from "@/components/workspace/CadStage";
 import PlanStage from "@/components/workspace/PlanStage";
 import ThreeDStage from "@/components/workspace/ThreeDStage";
-import CostStage from "@/components/workspace/CostStage";
+import MaterialStage from "@/components/workspace/MaterialStage";
+import CinematicStudio from "@/components/workspace/CinematicStudio";
+import CostEstimationStage from "@/components/workspace/CostEstimationStage";
+import CollaborationStage from "@/components/workspace/CollaborationStage";
 import SummaryStage from "@/components/workspace/SummaryStage";
 import IntelligencePanel from "@/components/workspace/IntelligencePanel";
+import DraftingStage from "@/components/workspace/DraftingStage";
 import CommandPalette from "@/components/workspace/CommandPalette";
 
-const STAGES: { id: WorkspaceStage; label: string; icon: any }[] = [
-  { id: "onboarding", label: "AI Feasibility", icon: Sparkles },
-  { id: "location", label: "Location", icon: MapPin },
-  { id: "cad", label: "CAD Planning", icon: PenTool },
-  { id: "plan", label: "Plan (2D)", icon: Layout },
-  { id: "3d", label: "3D View", icon: Box },
-  { id: "cost", label: "Cost", icon: BarChart3 },
-  { id: "summary", label: "Summary", icon: FileText },
+const STAGES: { id: WorkspaceStage; label: string; icon: typeof Sparkles }[] = [
+  { id: "onboarding", label: "01 Lifestyle IQ", icon: Sparkles },
+  { id: "location", label: "02 Site Input", icon: MapPin },
+  { id: "cad", label: "03 Regulatory IQ", icon: PenTool },
+  { id: "plan", label: "04 Spatial Zoning", icon: Layout },
+  { id: "drafting", label: "05 Technical Drafting", icon: FileText },
+  { id: "3d", label: "06 3D Studio", icon: Box },
+  { id: "material", label: "07 Material Intel", icon: Database },
+  { id: "cinematic", label: "08 Cinematic Studio", icon: Sparkles },
+  { id: "cost", label: "09 Cost Intelligence", icon: BarChart3 },
+  { id: "collaboration", label: "10 Collaboration", icon: Users },
+  { id: "summary", label: "11 Project Summary", icon: FileText },
 ];
 
 export default function WorkspacePage() {
@@ -36,8 +43,16 @@ export default function WorkspacePage() {
     demoMode, notification, clearNotification,
   } = useUIStore();
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Command palette shortcut
   useEffect(() => {
@@ -59,7 +74,7 @@ export default function WorkspacePage() {
 
   if (!mounted) return null;
 
-  const showRightPanel = rightPanelOpen && ["plan", "3d", "cost", "summary"].includes(currentStage);
+  const showRightPanel = rightPanelOpen && ["plan", "3d", "material", "cinematic", "cost", "summary"].includes(currentStage);
 
   return (
     <div style={{ background: "var(--bg)", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -124,7 +139,7 @@ export default function WorkspacePage() {
           <button className="btn-icon desktop-only" onClick={() => setCommandPaletteOpen(true)} title="Command Palette (⌘K)">
             <Command size={14} />
           </button>
-          {["plan", "3d", "cost", "summary"].includes(currentStage) && (
+          {["plan", "3d", "cinematic", "cost", "collaboration", "summary"].includes(currentStage) && (
             <button className="btn-icon" onClick={() => setRightPanelOpen(!rightPanelOpen)}>
               {rightPanelOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
             </button>
@@ -136,31 +151,26 @@ export default function WorkspacePage() {
       <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
         {/* Left Sidebar */}
         <aside style={{
-          position: "absolute", top: 0, bottom: 0, left: 0,
-          width: "240px",
+          position: isMobile ? "absolute" : "relative",
+          top: 0, bottom: 0, left: 0,
+          width: isMobile ? "240px" : (sidebarCollapsed ? "48px" : "200px"),
           zIndex: 100,
           borderRight: "1px solid var(--border)",
           background: "var(--surface-1)",
           flexShrink: 0,
           display: "flex", flexDirection: "column",
-          transform: (sidebarCollapsed && mounted && window.innerWidth < 768) ? "translateX(-100%)" : "translateX(0)",
+          transform: isMobile && sidebarCollapsed ? "translateX(-100%)" : "translateX(0)",
           transition: "all 0.3s var(--ease-out)",
           overflow: "hidden",
-          // On desktop, follow standard sidebar logic
-          ...(mounted && window.innerWidth >= 768 ? {
-            position: "relative",
-            width: sidebarCollapsed ? "48px" : "200px",
-            transform: "none"
-          } : {})
         }}>
-          <div style={{ padding: sidebarCollapsed ? "8px 6px" : "12px", display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
+          <div style={{ padding: sidebarCollapsed && !isMobile ? "8px 6px" : "12px", display: "flex", flexDirection: "column", gap: "2px", flex: 1 }}>
             {STAGES.map((s, i) => {
               const isActive = currentStage === s.id;
               const isDone = i < currentIdx;
               return (
                 <button key={s.id} onClick={() => {
                   setStage(s.id);
-                  if (window.innerWidth < 768) setSidebarCollapsed(true);
+                  if (isMobile) setSidebarCollapsed(true);
                 }} style={{
                   display: "flex", alignItems: "center", gap: "10px",
                   padding: "10px 12px",
@@ -170,7 +180,7 @@ export default function WorkspacePage() {
                   color: isActive ? "var(--accent)" : isDone ? "var(--emerald)" : "var(--t-muted)",
                 }}>
                   <s.icon size={16} style={{ flexShrink: 0 }} />
-                  {(!sidebarCollapsed || (mounted && window.innerWidth < 768)) && (
+                  {(!sidebarCollapsed || isMobile) && (
                     <span style={{ fontSize: "13px", fontWeight: isActive ? 600 : 400, whiteSpace: "nowrap" }}>
                       {s.label}
                     </span>
@@ -203,8 +213,12 @@ export default function WorkspacePage() {
               {currentStage === "location" && <LocationStage onNext={goNext} />}
               {currentStage === "cad" && <CadStage onNext={goNext} />}
               {currentStage === "plan" && <PlanStage onNext={goNext} />}
+              {currentStage === "drafting" && <DraftingStage onNext={goNext} />}
               {currentStage === "3d" && <ThreeDStage />}
-              {currentStage === "cost" && <CostStage />}
+              {currentStage === "material" && <MaterialStage />}
+              {currentStage === "cinematic" && <CinematicStudio />}
+              {currentStage === "cost" && <CostEstimationStage />}
+              {currentStage === "collaboration" && <CollaborationStage />}
               {currentStage === "summary" && <SummaryStage />}
             </motion.div>
           </AnimatePresence>
@@ -216,24 +230,24 @@ export default function WorkspacePage() {
             <motion.aside
               initial={{ width: 0, opacity: 0, x: 20 }}
               animate={{ 
-                width: (mounted && window.innerWidth < 768) ? "100%" : 340, 
+                width: isMobile ? "100%" : 340, 
                 opacity: 1,
                 x: 0
               }}
               exit={{ width: 0, opacity: 0, x: 20 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{
-                position: (mounted && window.innerWidth < 768) ? "absolute" : "relative",
+                position: isMobile ? "absolute" : "relative",
                 top: 0, bottom: 0, right: 0,
                 borderLeft: "1px solid var(--border)",
                 background: "var(--surface-1)",
                 flexShrink: 0,
                 overflow: "hidden",
                 zIndex: 200,
-                boxShadow: (mounted && window.innerWidth < 768) ? "-10px 0 30px rgba(0,0,0,0.3)" : "none"
+                boxShadow: isMobile ? "-10px 0 30px rgba(0,0,0,0.3)" : "none"
               }}
             >
-              <div style={{ width: (mounted && window.innerWidth < 768) ? "100%" : "340px", height: "100%", overflowY: "auto" }}>
+              <div style={{ width: isMobile ? "100%" : "340px", height: "100%", overflowY: "auto" }}>
                 <IntelligencePanel />
               </div>
             </motion.aside>

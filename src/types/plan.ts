@@ -30,6 +30,10 @@ export interface Room {
   floor?: number;
   doors?: RoomDoor[];
   windows?: RoomWindow[];
+  floorMaterial?: string;
+  wallMaterial?: string;
+  ceilingMaterial?: string;
+  furniture?: { id: string; type: string; x: number; y: number; rotation: number }[];
 }
 
 // ── Design sub-types ──────────────────────────────────────────
@@ -138,4 +142,31 @@ export interface ArchitectOutput {
   cost_estimate: FloorPlan["cost_estimate"];
   design_scores: DesignScores;
   ai_suggestions: string[];
+}
+
+export interface MaterialSpec {
+  id: string;
+  name: string;
+  brand: string;
+  manufacturer: string;
+  category: "Paint" | "Flooring" | "Wall" | "Sanitary" | "Electrical" | "Hardware" | "Glass" | "Landscape";
+  finish: string;
+  dimensions?: string;
+  texture?: string;
+  color?: string;
+  quantity: number;
+  unit: "sqft" | "pcs" | "liters" | "m" | "kg";
+  location: string;
+  installationInfo: string;
+  reasoning: {
+    technical: string;
+    design: string;
+  };
+  alternatives: { id: string; name: string; brand: string; priceImpact: "Lower" | "Same" | "Higher" }[];
+}
+
+export interface MaterialReport {
+  totalMaterials: number;
+  categories: Record<string, number>;
+  roomMaterials: Record<string, MaterialSpec[]>;
 }

@@ -42,7 +42,7 @@ export default function ProfileStage({ onNext }: { onNext: () => void }) {
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <h1 className="font-display" style={{ fontSize: "2rem", marginBottom: "8px", letterSpacing: "-0.02em" }}>Create your profile</h1>
           <p style={{ color: "var(--t-secondary)", fontSize: "14px" }}>
-            Let's get to know you before we start designing your space.
+            Let&apos;s get to know you before we start designing your space.
           </p>
         </div>
 

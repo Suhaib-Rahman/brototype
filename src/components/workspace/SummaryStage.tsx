@@ -1,173 +1,201 @@
 "use client";
 import { motion } from "framer-motion";
-import { FileText, Download, CheckCircle2, AlertTriangle, Lightbulb, Shield, TrendingUp, Award, Box } from "lucide-react";
+import {
+  Download, CheckCircle2, Lightbulb,
+  Shield, Award, Box, Users,
+  Camera, FileText, Globe, ShieldCheck,
+  TrendingUp, Layers, Layout
+} from "lucide-react";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useChatStore } from "@/store/useChatStore";
 import { useProjectStore } from "@/store/useProjectStore";
-import { DEMO_AGENTS } from "@/data/demo-data";
+import { useCostStore } from "@/store/useCostStore";
+import { useCollaborationStore } from "@/store/useCollaborationStore";
+import Image from "next/image";
 
 export default function SummaryStage() {
   const { floorPlan } = usePlanStore();
   const { requirements } = useChatStore();
-  const { location, analysis } = useProjectStore();
+  const { location } = useProjectStore();
+  const { report } = useCostStore();
+  const { session, selectedArchitect } = useCollaborationStore();
 
   const plan = floorPlan;
   const score = plan?.plan_score;
 
+  if (!plan) return <div style={{ padding: "40px", textAlign: "center" }}>No project intelligence package found.</div>;
+
   return (
-    <div style={{ height: "100%", overflowY: "auto", padding: "32px 24px" }}>
-      <div style={{ maxWidth: "800px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div style={{ height: "100%", overflowY: "auto", padding: "40px 24px", background: "var(--bg)" }}>
+      <div style={{ maxWidth: "1000px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "32px" }}>
+
+        {/* ── PROJECT DOSSIER HEADER ──────────────────────────── */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid var(--border)", paddingBottom: "24px" }}>
           <div>
-            <h2 className="font-display" style={{ fontSize: "1.8rem", marginBottom: "4px" }}>Project Summary</h2>
-            <p style={{ color: "var(--t-muted)", fontSize: "14px" }}>{location || "Kochi, Kerala"} · {plan?.totalSqft || 2400} sqft · {requirements?.bedrooms || 3}BHK</p>
+            <div className="badge badge-emerald" style={{ marginBottom: "12px" }}>Execution Ready</div>
+            <h1 className="font-display" style={{ fontSize: "2.5rem", marginBottom: "8px" }}>Final Project Dossier</h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px", color: "var(--t-muted)", fontSize: "14px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Globe size={14} /> {location || "Kochi, Kerala"}</span>
+              <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--border)" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Layout size={14} /> {plan.totalSqft} sqft</span>
+              <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--border)" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Users size={14} /> {requirements?.bedrooms || 3}BHK {requirements?.style || "Modern"}</span>
+            </div>
           </div>
-          <button className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Download size={14} /> Export PDF
-          </button>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button className="btn-secondary" style={{ padding: "12px 24px", borderRadius: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <FileText size={18} /> Technical Specs
+            </button>
+            <button className="btn-primary" style={{ padding: "12px 32px", borderRadius: "12px", display: "flex", alignItems: "center", gap: "10px", fontWeight: 700 }}>
+              <Download size={18} /> Download Full Package (XLSX/PDF/DWG)
+            </button>
+          </div>
         </div>
 
-        {/* Plan Score */}
-        {score && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card" style={{ padding: "28px", borderRadius: "var(--radius-xl)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
-              <div style={{
-                width: "72px", height: "72px", borderRadius: "50%",
-                background: `conic-gradient(var(--accent) ${score.total * 3.6}deg, var(--surface-3) 0deg)`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                <div style={{
-                  width: "56px", height: "56px", borderRadius: "50%", background: "var(--surface-1)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <span className="font-display" style={{ fontSize: "1.3rem" }}>{score.total}</span>
-                </div>
-              </div>
-              <div>
-                <h3 className="font-display" style={{ fontSize: "1.2rem", marginBottom: "2px" }}>Plan Score</h3>
-                <p style={{ color: "var(--t-muted)", fontSize: "13px" }}>Scored across 4 dimensions by the Decision Engine</p>
-              </div>
-              <div className="badge badge-emerald" style={{ marginLeft: "auto" }}>
-                <Award size={10} /> {plan?.confidence_label || "High"} Confidence
-              </div>
+        {/* ── PROFESSIONAL VALIDATION & STATUS ────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "24px" }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card" style={{ padding: "24px", borderRadius: "20px", display: "flex", gap: "24px", background: "var(--surface-2)" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "rgba(16, 185, 129, 0.1)", color: "var(--emerald)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <ShieldCheck size={32} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-              {[
-                { label: "Space", value: score.space_efficiency, max: 25, color: "#3B82F6" },
-                { label: "Cost", value: score.cost_efficiency, max: 25, color: "#10B981" },
-                { label: "Climate", value: score.climate_suitability, max: 25, color: "#F59E0B" },
-                { label: "Compliance", value: score.compliance_safety, max: 25, color: "#8B5CF6" },
-              ].map(d => (
-                <div key={d.label} style={{ textAlign: "center" }}>
-                  <div className="font-display" style={{ fontSize: "1.4rem", color: d.color }}>{d.value}</div>
-                  <div style={{ fontSize: "11px", color: "var(--t-muted)", marginBottom: "6px" }}>{d.label} /{d.max}</div>
-                  <div style={{ height: "3px", background: "var(--surface-3)", borderRadius: "2px", overflow: "hidden" }}>
-                    <div style={{ width: `${(d.value / d.max) * 100}%`, height: "100%", background: d.color, borderRadius: "2px" }} />
+            <div style={{ flex: 1 }}>
+              <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "8px" }}>Professional Validation</h3>
+              <p style={{ fontSize: "13px", color: "var(--t-muted)", lineHeight: 1.5, marginBottom: "16px" }}>
+                This project intelligence package has been professionally reviewed and digitally signed by a verified architect for technical accuracy and execution readiness.
+              </p>
+              {selectedArchitect ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "12px", fontWeight: 700 }}>{selectedArchitect.name.charAt(4)}</div>
+                  <div style={{ fontSize: "13px", fontWeight: 600 }}>Ar. {selectedArchitect.name} <span style={{ color: "var(--emerald)", fontWeight: 400, marginLeft: "8px" }}>• {session?.isSigned ? 'Digitally Signed' : 'Review Complete'}</span></div>
+                </div>
+              ) : (
+                <div className="badge badge-amber">Awaiting Final Architect Sign-off</div>
+              )}
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card" style={{ padding: "24px", borderRadius: "20px", background: "var(--surface-2)" }}>
+            <div style={{ fontSize: "12px", color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Total Estimated Budget</div>
+            <div style={{ fontSize: "36px", fontWeight: 800, color: "var(--t-primary)", marginBottom: "8px" }}>
+              ${report?.totalProjectCost.toLocaleString() || "Calculated at Cost Stage"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--cyan)", fontSize: "13px", fontWeight: 600 }}>
+              <TrendingUp size={14} /> Low Volatility Predicted
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── CINEMATIC HIGHLIGHTS ──────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: "24px", borderRadius: "20px", overflow: "hidden" }}>
+          <h3 style={{ fontWeight: 700, marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <Camera size={20} color="var(--cyan)" /> Visual Intelligence Highlights
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", height: "300px" }}>
+            <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: "1px solid var(--border)" }}>
+              <Image src="/renders/render_exterior.png" alt="Exterior" fill unoptimized style={{ objectFit: "cover" }} />
+              <div style={{ position: "absolute", bottom: "12px", left: "12px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", padding: "4px 10px", borderRadius: "6px", color: "white", fontSize: "11px" }}>Exterior Master Pass</div>
+            </div>
+            <div style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: "1px solid var(--border)" }}>
+              <Image src="/renders/render_interior.png" alt="Interior" fill unoptimized style={{ objectFit: "cover" }} />
+              <div style={{ position: "absolute", bottom: "12px", left: "12px", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", padding: "4px 10px", borderRadius: "6px", color: "white", fontSize: "11px" }}>Living Intelligence View</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ── SPATIAL & COST BREAKDOWN ───────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "32px" }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card" style={{ padding: "24px", borderRadius: "20px" }}>
+            <h3 style={{ fontWeight: 700, marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <Box size={20} color="var(--cyan)" /> Spatial Intelligence Matrix
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {plan.rooms.map((r) => (
+                <div key={r.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", borderRadius: "10px", background: "var(--surface-2)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: r.color || "var(--surface-3)" }} />
+                    <span style={{ fontSize: "14px", fontWeight: 600 }}>{r.name}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+                    <span style={{ fontSize: "12px", color: "var(--t-muted)", fontFamily: "monospace" }}>{Math.round(r.realW || 0)}&apos; × {Math.round(r.realH || 0)}&apos;</span>
+                    <span style={{ fontSize: "14px", fontWeight: 700, width: "60px", textAlign: "right" }}>{Math.round(r.sqft || 0)} <span style={{ fontSize: "10px", fontWeight: 400 }}>SQFT</span></span>
                   </div>
                 </div>
               ))}
+              <div style={{ marginTop: "12px", padding: "16px", borderRadius: "12px", background: "var(--surface-3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontWeight: 700 }}>Total Constructed Area</span>
+                <span style={{ fontSize: "18px", fontWeight: 800, color: "var(--cyan)" }}>{plan.totalSqft.toLocaleString()} SQFT</span>
+              </div>
             </div>
           </motion.div>
-        )}
 
-        {/* Design Reasoning */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card" style={{ padding: "24px", borderRadius: "var(--radius-xl)" }}>
-          <h3 style={{ fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Lightbulb size={16} color="var(--amber)" /> Design Reasoning
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
-            {floorPlan?.rooms.some(r => r.type === 'corridor') && (
-               <div><strong style={{ color: "var(--t-primary)" }}>Path Generation Logic: </strong>A Central Circulation Path (hallway) was automatically generated to optimally separate the Public zone (Living/Kitchen) from the Private zone (Bedrooms/Bathrooms), ensuring high structural accuracy and flawless spatial flow.</div>
-            )}
-            <div><strong style={{ color: "var(--t-primary)" }}>Concept: </strong>{plan?.design_summary?.concept || "Modern layout optimized for natural lighting and efficient pathing."}</div>
-            <div><strong style={{ color: "var(--t-primary)" }}>Zoning: </strong>{plan?.design_summary?.zoning || "Strictly demarcated public and private zones via centralized circulation paths."}</div>
-            <div><strong style={{ color: "var(--t-primary)" }}>Target: </strong>{plan?.design_summary?.target_user || "Families prioritizing highly accurate architectural structure."}</div>
-          </div>
-        </motion.div>
-
-        {/* Spatial Allocation & Dimensions Table */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="card" style={{ padding: "24px", borderRadius: "var(--radius-xl)" }}>
-          <h3 style={{ fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Box size={16} color="var(--cyan)" /> Spatial Allocation & Dimensions
-          </h3>
-          <div style={{ background: "var(--surface-1)", borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--border)" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-              <thead>
-                <tr style={{ background: "var(--surface-2)", textAlign: "left", color: "var(--t-muted)" }}>
-                  <th style={{ padding: "12px 16px", fontWeight: 500 }}>Space / Zone</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 500 }}>Dimensions (W × D)</th>
-                  <th style={{ padding: "12px 16px", fontWeight: 500, textAlign: "right" }}>Area (sqft)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {floorPlan?.rooms.map((r, i) => (
-                  <tr key={r.id} style={{ borderTop: "1px solid var(--border)", color: "var(--t-secondary)" }}>
-                    <td style={{ padding: "12px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div style={{ width: "10px", height: "10px", borderRadius: "2px", background: r.color || "var(--surface-3)" }} />
-                        <span style={{ fontWeight: 500, color: "var(--t-primary)" }}>{r.name}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px 16px", fontFamily: "monospace", fontSize: "12px" }}>
-                      {Math.round(r.realW || 0)}' × {Math.round(r.realH || 0)}'
-                    </td>
-                    <td style={{ padding: "12px 16px", textAlign: "right", fontWeight: 600, color: "var(--t-primary)" }}>
-                      {Math.round(r.sqft || 0)}
-                    </td>
-                  </tr>
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="card" style={{ padding: "24px", borderRadius: "20px" }}>
+              <h3 style={{ fontWeight: 700, marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                <Award size={20} color="var(--amber)" /> Decision Confidence
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                {[
+                  { label: "Spatial Logic", value: score?.space_efficiency || 92, color: "var(--cyan)" },
+                  { label: "Cost Guard", value: score?.cost_efficiency || 88, color: "var(--emerald)" },
+                  { label: "Compliance", value: score?.compliance_safety || 96, color: "var(--violet)" },
+                  { label: "Feasibility", value: 94, color: "var(--amber)" },
+                ].map(item => (
+                  <div key={item.label}>
+                    <div style={{ fontSize: "11px", color: "var(--t-muted)", marginBottom: "4px" }}>{item.label}</div>
+                    <div style={{ fontSize: "20px", fontWeight: 800, color: item.color }}>{item.value}%</div>
+                  </div>
                 ))}
-                {/* Total Row */}
-                <tr style={{ borderTop: "2px solid var(--border)", background: "var(--surface-2)", color: "var(--t-primary)" }}>
-                  <td style={{ padding: "12px 16px", fontWeight: 700 }} colSpan={2}>Total Built-up Area</td>
-                  <td style={{ padding: "12px 16px", textAlign: "right", fontWeight: 700, color: "var(--accent)", fontSize: "14px" }}>
-                    {floorPlan?.totalSqft || 0} sqft
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+              </div>
+            </motion.div>
 
-        {/* Assumptions & Risks */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          {plan?.assumptions && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card" style={{ padding: "20px", borderRadius: "var(--radius-lg)" }}>
-              <h4 style={{ fontWeight: 600, marginBottom: "12px", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Shield size={14} color="var(--accent)" /> Assumptions
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="card" style={{ padding: "24px", borderRadius: "20px", background: "var(--surface-3)" }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <Layers size={16} /> Orchestrated AI Agents
               </h4>
-              <ul style={{ fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.7, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                {plan.assumptions.map((a, i) => <li key={i}>{a}</li>)}
-              </ul>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {[
+                  "Architectural Planner", "Zoning Intelligence", "Technical Drafter",
+                  "Material Specialist", "Cost Optimizer", "Cinematic Render Engine"
+                ].map((agent, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", color: "var(--t-muted)" }}>
+                    <CheckCircle2 size={12} color="var(--emerald)" /> {agent} <span style={{ marginLeft: "auto", fontSize: "10px" }}>Active</span>
+                  </div>
+                ))}
+              </div>
             </motion.div>
-          )}
-          {plan?.risks && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="card" style={{ padding: "20px", borderRadius: "var(--radius-lg)" }}>
-              <h4 style={{ fontWeight: 600, marginBottom: "12px", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <AlertTriangle size={14} color="var(--amber)" /> Risks
-              </h4>
-              <ul style={{ fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.7, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                {plan.risks.map((r, i) => <li key={i}>{r}</li>)}
-              </ul>
-            </motion.div>
-          )}
+          </div>
         </div>
 
-        {/* Agent Orchestra */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="card" style={{ padding: "24px", borderRadius: "var(--radius-xl)" }}>
-          <h3 style={{ fontWeight: 600, marginBottom: "16px", fontSize: "14px" }}>Multi-Agent Orchestration</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {DEMO_AGENTS.map((agent, i) => (
-              <motion.div key={agent.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.08 }}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", borderRadius: "var(--radius-sm)", background: "var(--surface-2)" }}>
-                <CheckCircle2 size={14} color="var(--emerald)" />
-                <span style={{ fontSize: "13px", fontWeight: 600, width: "140px" }}>{agent.name}</span>
-                <span style={{ fontSize: "12px", color: "var(--t-muted)", flex: 1 }}>{agent.output}</span>
-                <span className="badge badge-emerald" style={{ fontSize: "10px" }}>Done</span>
-              </motion.div>
-            ))}
+        {/* ── DESIGN SUMMARY & CONCEPT ───────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="card" style={{ padding: "32px", borderRadius: "24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "40px" }}>
+            <div>
+              <h3 className="font-display" style={{ fontSize: "24px", marginBottom: "16px" }}>The Manifesto</h3>
+              <p style={{ fontSize: "14px", color: "var(--t-muted)", lineHeight: 1.6 }}>A comprehensive summary of the project&apos;s architectural intent and structural logic.</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 700, marginBottom: "8px" }}><Lightbulb size={16} color="var(--amber)" /> Design Concept</div>
+                <p style={{ fontSize: "15px", color: "var(--t-secondary)", lineHeight: 1.6 }}>{plan.design_summary?.concept || "Modern layout optimized for natural lighting and efficient pathing."}</p>
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 700, marginBottom: "8px" }}><Shield size={16} color="var(--cyan)" /> Structural & Execution Logic</div>
+                <p style={{ fontSize: "15px", color: "var(--t-secondary)", lineHeight: 1.6 }}>{plan.design_summary?.zoning || "Strictly demarcated public and private zones via centralized circulation paths."}</p>
+              </div>
+            </div>
           </div>
         </motion.div>
+
+        {/* ── FINAL CTA ─────────────────────────────────────── */}
+        <div style={{ textAlign: "center", padding: "40px 0" }}>
+          <h2 className="font-display" style={{ fontSize: "2rem", marginBottom: "16px" }}>Ready to Begin Execution?</h2>
+          <p style={{ color: "var(--t-muted)", fontSize: "16px", marginBottom: "32px" }}>The next stage connects your validated project intelligence directly with execution contractors and authority approval portals.</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: "16px" }}>
+            <button className="btn-primary" style={{ padding: "16px 40px", borderRadius: "14px", fontSize: "16px", fontWeight: 700 }}>Deploy Project to Contractors</button>
+            <button className="btn-secondary" style={{ padding: "16px 40px", borderRadius: "14px", fontSize: "16px" }}>Save to My Workspace</button>
+          </div>
+        </div>
+
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Sparkles, Clock } from "lucide-react";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useChatStore } from "@/store/useChatStore";
 

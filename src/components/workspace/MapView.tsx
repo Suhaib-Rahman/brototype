@@ -44,7 +44,7 @@ export default function MapView() {
           } else {
             setLocation(`Custom Plot: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
           }
-        } catch(err) {
+        } catch {
           setLocation(`Custom Plot: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
         }
       });

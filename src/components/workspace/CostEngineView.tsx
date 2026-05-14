@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Download, Share2, Send, Sparkles } from "lucide-react";
+import { Download, Share2, Sparkles } from "lucide-react";
 import { useAIEngine } from "@/store/useAIEngine";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -129,7 +129,7 @@ export function CostEngineView() {
               </thead>
               <tbody>
                 <AnimatePresence>
-                  {tableData.map((row, i) => (
+                  {tableData.map((row) => (
                     <motion.tr 
                       key={`${row.spec}-${row.material}`} 
                       initial={{ opacity: 0, backgroundColor: "rgba(198,176,138,0.2)" }} 

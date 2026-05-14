@@ -25,27 +25,34 @@ export function CollaborationView() {
       const latest = aiNotifications[0];
       // Prevent duplicate messages if the notification hasn't changed
       if (!messages.find(m => m.text === latest.message)) {
-        setMessages(prev => [...prev, {
-          id: latest.id,
-          sender: "ai",
-          text: latest.message,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMessages(prev => {
+           const newMsg: Message = {
+            id: latest.id,
+            sender: "ai",
+            text: latest.message,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          return [...prev, newMsg];
+        });
 
         // If it's a major optimization, simulate the human architect responding to the AI's change
         if (latest.type === 'optimization') {
           setTimeout(() => {
-            setMessages(prev => [...prev, {
-              id: Date.now().toString(),
-              sender: "architect",
-              text: "I saw the AI replaced the Italian Marble with Ceramic Tiles. That's a smart value-engineering move, it saves us a lot of budget without compromising the core aesthetic.",
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }]);
+            setMessages(prev => {
+              const newMsg: Message = {
+                id: Date.now().toString(),
+                sender: "architect",
+                text: "I saw the AI replaced the Italian Marble with Ceramic Tiles. That's a smart value-engineering move, it saves us a lot of budget without compromising the core aesthetic.",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              };
+              return [...prev, newMsg];
+            });
           }, 3000);
         }
       }
     }
-  }, [aiNotifications]);
+  }, [aiNotifications, messages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,11 +86,12 @@ export function CollaborationView() {
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: `Error: ${error.message}`,
+        text: `Error: ${errorMsg}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
     } finally {
@@ -136,7 +144,7 @@ export function CollaborationView() {
                   color: msg.sender === "ai" ? "var(--accent)" : msg.sender === "architect" ? "var(--t-primary)" : "var(--bg)",
                   border: msg.sender === "ai" ? "1px solid rgba(198,176,138,0.3)" : "none"
                 }}>
-                  {msg.sender === "ai" ? <Bot size={18} /> : msg.sender === "architect" ? <User size={18} /> : <User size={18} />}
+                  {msg.sender === "ai" ? <Bot size={18} /> : <User size={18} />}
                 </div>
 
                 <div style={{ maxWidth: "60%" }}>

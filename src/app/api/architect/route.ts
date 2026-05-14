@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
 
+interface Message {
+  role?: string;
+  sender?: string;
+  content?: string;
+  text?: string;
+}
+
 export async function POST(req: Request) {
   try {
     const { messages, projectContext, generateFeasibility, mode } = await req.json();
@@ -119,29 +126,33 @@ ${isEditing ? "CRITICAL: You MUST maintain the general layout of the existing pl
          Context: ${JSON.stringify(projectContext)}
          Focus on: Code compliance, Vastu/Feng Shui, cost optimization, and spatial efficiency.
          Be concise, professional, and insightful. Avoid generic advice; be specific to the layout provided.`
-      : `You are an advanced "Architectural Intelligence AI" operating across two critical phases:
+      : `You are the primary "Architectural Intelligence Engine" for the ARCOVA platform. 
+         You are currently operating in STAGE 01: HUMAN UNDERSTANDING & LIFESTYLE INTELLIGENCE.
          
-         STAGE 01: Human Understanding & Lifestyle Intelligence
-         OBJECTIVE: Understand the people behind a space.
-         FRAMEWORK: Purpose, Lifestyle, Preferences, Goals, Practical Needs.
+         CORE MISSION: Architecture is not just geometry; it is a response to human behavior, emotional needs, and lifestyle patterns. You must understand the PEOPLE before the SPACE.
          
-         STAGE 03: Site Analysis & Regulatory Intelligence
-         OBJECTIVE: Evaluate site data against local regulations and environmental conditions.
-         FRAMEWORK: 
-         - Regulatory: FAR/FSI, Coverage, Max Height, Setbacks (F/R/S).
-         - Environmental: Sun Path analysis, prevailing winds, soil bearing capacity.
-         - Infrastructure: Parking requirements, fire exits, lift capacity.
+         STAGE 01 — HUMAN UNDERSTANDING: Focus on behavior and lifestyle.
+         STAGE 02 — SITE INPUT: Collect sketches and validate requirements.
+         STAGE 03 — REGULATORY: Calculate FAR, setbacks, and feasibility.
+         STAGE 04 — ZONING: Map spatial relationships and circulation flow.
+         
+         STAGE 05 — PLAN DRAFTING & TECHNICAL INTELLIGENCE:
+         1. DRAFTING IQ: Generate dimensionally accurate, executable architectural plans (walls, doors, windows).
+         2. COORDINATION: Synchronize Furniture, Structural, Electrical, and Plumbing (MEP) systems.
+         3. TECHNICAL SPECS: Define wall thickness, structural spacing, ceiling heights, and clearances.
+         4. REASONING: Explain every technical decision (e.g., column placement for load distribution).
+         5. CONSTRUCTION READY: Ensure all elements are technically feasible and dimensionally precise.
          
          CONVERSATIONAL RULES:
-         - Identify which stage the conversation is in.
-         - Ask questions conversationally, one or two at a time.
-         - In Stage 03, act as a technical expert providing precise calculations.
-         - Once all data is validated, generate a "Regulatory Summary" and "Environmental Profile".
+         - Drafting is construction-ready engineering, not just drawing.
+         - Maintain synchronization between technical layers (e.g., updating a wall updates electrical/plumbing).
+         - Use technical terminology (Load distribution, MEP coordination, Fixture positioning).
+         - Provide deep reasoning for spatial and structural choices.
          
-         CRITICAL INSTRUCTION: Once you have gathered enough information to generate a floor plan, you MUST append the exact string "[GENERATE_PLAN_READY]" at the very end of your response.`.trim();
+         CRITICAL INSTRUCTION: Once you have gathered enough human and site intelligence to generate a floor plan, you MUST append the exact string "[GENERATE_PLAN_READY]" at the very end of your response.`.trim();
 
     // Convert standard {role, content} to Gemini {role, parts: [{text}]} format
-    const formattedContents = messages.map((m: any) => ({
+    const formattedContents = messages.map((m: Message) => ({
       role: (m.role === 'user' || m.sender === 'user') ? 'user' : 'model',
       parts: [{ text: m.content || m.text }]
     }));
@@ -174,12 +185,12 @@ ${isEditing ? "CRITICAL: You MUST maintain the general layout of the existing pl
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I could not process that request.";
     
     return NextResponse.json({ reply });
-  } catch (error: any) {
-    console.error('Gemini API Error:', error);
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('Gemini API Error:', errorMsg);
     return NextResponse.json(
-      { error: error.message || 'An error occurred during your request.' },
+      { error: errorMsg || 'An error occurred during your request.' },
       { status: 500 }
     );
   }
 }
-

@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Layout, Box, BarChart3, MapPin, MessageSquare, FileText, Sparkles, Command, Zap } from "lucide-react";
-import { useUIStore, WorkspaceStage } from "@/store/useUIStore";
+import { Search, Layout, Box, BarChart3, FileText, Sparkles, Zap, Palette } from "lucide-react";
+import { useUIStore } from "@/store/useUIStore";
 
 interface CmdItem {
   id: string;
@@ -14,7 +14,7 @@ interface CmdItem {
 }
 
 export default function CommandPalette({ onClose }: { onClose: () => void }) {
-  const { setStage, setCanvasTab } = useUIStore();
+  const { setStage, setPalette, showNotification } = useUIStore();
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,10 +27,12 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
     { id: "nav-summary", label: "Go to Summary", icon: FileText, group: "Navigation", action: () => { setStage("summary"); onClose(); } },
     { id: "ai-generate", label: "Analyze Feasibility", icon: Sparkles, group: "AI Actions", action: () => { setStage("onboarding"); onClose(); } },
     { id: "ai-optimize", label: "Optimize Layout", icon: Zap, group: "AI Actions", action: () => { setStage("plan"); onClose(); } },
+    { id: "theme-apple", label: "Switch to Apple Palette", icon: Palette, group: "Appearance", action: () => { setPalette("apple"); showNotification("success", "Palette switched to Apple Pro"); onClose(); } },
+    { id: "theme-classic", label: "Switch to Classic Palette", icon: Palette, group: "Appearance", action: () => { setPalette("classic"); showNotification("success", "Palette switched to Classic Gold"); onClose(); } },
   ];
 
   const filtered = items.filter(i => i.label.toLowerCase().includes(query.toLowerCase()));
-  const groups = [...new Set(filtered.map(i => i.group))];
+  const groups = Array.from(new Set(filtered.map(i => i.group)));
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -43,8 +45,6 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [filtered, activeIdx]);
-
-  let flatIdx = -1;
 
   return (
     <motion.div
@@ -81,29 +81,31 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
 
         {/* Results */}
         <div style={{ maxHeight: "320px", overflowY: "auto", padding: "8px" }}>
-          {groups.map(group => (
-            <div key={group}>
-              <div style={{ padding: "8px 12px 4px", fontSize: "11px", fontWeight: 600, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                {group}
+          {groups.map(group => {
+            const groupItems = filtered.filter(i => i.group === group);
+            return (
+              <div key={group}>
+                <div style={{ padding: "8px 12px 4px", fontSize: "11px", fontWeight: 600, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {group}
+                </div>
+                {groupItems.map(item => {
+                  const idx = filtered.indexOf(item);
+                  return (
+                    <div
+                      key={item.id}
+                      className={`cmd-item ${idx === activeIdx ? "active" : ""}`}
+                      onClick={item.action}
+                      onMouseEnter={() => setActiveIdx(idx)}
+                    >
+                      <item.icon size={16} />
+                      {item.label}
+                      {item.shortcut && <span className="kbd">{item.shortcut}</span>}
+                    </div>
+                  );
+                })}
               </div>
-              {filtered.filter(i => i.group === group).map(item => {
-                flatIdx++;
-                const idx = flatIdx;
-                return (
-                  <div
-                    key={item.id}
-                    className={`cmd-item ${idx === activeIdx ? "active" : ""}`}
-                    onClick={item.action}
-                    onMouseEnter={() => setActiveIdx(idx)}
-                  >
-                    <item.icon size={16} />
-                    {item.label}
-                    {item.shortcut && <span className="kbd">{item.shortcut}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            );
+          })}
           {filtered.length === 0 && (
             <div style={{ padding: "24px", textAlign: "center", color: "var(--t-muted)", fontSize: "14px" }}>
               No commands found

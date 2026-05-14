@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, CheckCircle2, Lightbulb, Map, FileText, Loader2, Sparkles, Target } from "lucide-react";
+import { ArrowRight, Lightbulb, Map, FileText, Loader2, Sparkles, Target } from "lucide-react";
 
 export default function DiscoveryStage({ onNext }: { onNext: () => void }) {
   const [step, setStep] = useState(0);
@@ -50,7 +50,7 @@ export default function DiscoveryStage({ onNext }: { onNext: () => void }) {
           <motion.div key="s1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="card" style={{ maxWidth: "480px", width: "100%", padding: "40px", borderRadius: "24px" }}>
             <Target size={24} color="var(--emerald)" style={{ marginBottom: "16px" }} />
             <h2 className="font-display" style={{ fontSize: "24px", marginBottom: "8px" }}>What is your primary goal?</h2>
-            <p style={{ color: "var(--t-secondary)", marginBottom: "32px", fontSize: "14px" }}>We'll tailor the AI analysis based on your investment or lifestyle goals.</p>
+            <p style={{ color: "var(--t-secondary)", marginBottom: "32px", fontSize: "14px" }}>We&apos;ll tailor the AI analysis based on your investment or lifestyle goals.</p>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {["Building my dream home", "Commercial development", "Real estate investment / Flipping", "Sustainable / Eco-living"].map(opt => (
@@ -67,7 +67,7 @@ export default function DiscoveryStage({ onNext }: { onNext: () => void }) {
           <motion.div key="s2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="card" style={{ maxWidth: "560px", width: "100%", padding: "40px", borderRadius: "24px" }}>
             <Lightbulb size={24} color="var(--amber)" style={{ marginBottom: "16px" }} />
             <h2 className="font-display" style={{ fontSize: "24px", marginBottom: "8px" }}>Do you have any specific ideas or suggestions?</h2>
-            <p style={{ color: "var(--t-secondary)", marginBottom: "24px", fontSize: "14px" }}>Describe your vision. Don't worry about technical terms, the AI will translate your ideas into architecture.</p>
+            <p style={{ color: "var(--t-secondary)", marginBottom: "24px", fontSize: "14px" }}>Describe your vision. Don&apos;t worry about technical terms, the AI will translate your ideas into architecture.</p>
             
             <textarea
               className="input-field"
@@ -92,7 +92,7 @@ export default function DiscoveryStage({ onNext }: { onNext: () => void }) {
                 <Sparkles color="var(--cyan)" /> AI Feasibility Analysis
               </h2>
               <div style={{ fontSize: "15px", color: "var(--t-secondary)", lineHeight: 1.7 }}>
-                Based on your goal of <strong>{answers.goal.toLowerCase()}</strong> {answers.hasLand.includes("empty") ? "on an empty plot" : "without current land"}, we've analyzed the trajectory. Your ideas emphasize natural light and openness. Structurally, this requires a focus on large-span glazing and passive solar orientation. Budget allocation should prioritize high-efficiency fenestration.
+                Based on your goal of <strong>{answers.goal.toLowerCase()}</strong> {answers.hasLand.includes("empty") ? "on an empty plot" : "without current land"}, we&apos;ve analyzed the trajectory. Your ideas emphasize natural light and openness. Structurally, this requires a focus on large-span glazing and passive solar orientation. Budget allocation should prioritize high-efficiency fenestration.
               </div>
             </div>
 

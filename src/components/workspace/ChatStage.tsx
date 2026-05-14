@@ -1,27 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, User, Sparkles, Loader2, Send } from "lucide-react";
+import { Bot, User, Send } from "lucide-react";
 import { useChatStore } from "@/store/useChatStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useUIStore } from "@/store/useUIStore";
-import { DEMO_FLOOR_PLAN, DEMO_AI_RESPONSES } from "@/data/demo-data";
-import { Requirements } from "@/types/project";
 
-const SUGGESTIONS = {
-  plot: ["1,200 sqft", "2,400 sqft", "3,600 sqft"],
-  bedrooms: ["2 Bedrooms", "3 Bedrooms", "4+ Bedrooms"],
-  style: ["Modern & Minimal", "Traditional & Vastu", "Contemporary"],
-  budget: ["Economy", "Standard", "Premium", "Luxury"],
-};
-
-export default function ChatStage({ onNext }: { onNext: () => void }) {
+export default function ChatStage() {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [generating, setGenerating] = useState(false);
   const [inputText, setInputText] = useState("");
   
   const { 
-    messages, addMessage, requirements, updateRequirement, 
+    messages, addMessage, requirements, 
     isTyping, setTyping, requirementsComplete, setRequirementsComplete, 
     addMemoryChip, memoryChips, customer
   } = useChatStore();
@@ -35,7 +25,7 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
         : `Hello! I'm your Architectural AI. To begin designing your space, what is your approximate plot size?`;
       setTimeout(() => addMessage({ role: "assistant", content: greeting }), 400);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -61,7 +51,7 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
       if (!response.ok) throw new Error(data.error || "Failed to connect to AI Architect");
 
       setTyping(false);
-      const reply = data.reply;
+      const reply: string = data.reply;
       
       // Check if AI says we are ready to generate
       if (reply.includes("[GENERATE_PLAN_READY]")) {
@@ -74,8 +64,6 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
         addMessage({ role: "assistant", content: reply });
       }
 
-      // Heuristic for memory chips based on AI response or user input
-      // (Optional: we could have the AI return structured data, but for now we'll keep simple heuristics)
       const textLower = text.toLowerCase();
       if (textLower.includes("sqft") && !memoryChips.find(c => c.label === "Plot")) {
         const match = textLower.match(/(\d+,?\d*)/);
@@ -86,11 +74,12 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
         if (match) addMemoryChip({ label: "Bedrooms", value: `${match[1]} Beds`, color: "cyan" });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       setTyping(false);
+      const errorMsg = error instanceof Error ? error.message : String(error);
       addMessage({ 
         role: "assistant", 
-        content: `I encountered an error: ${error.message}. Please check your connection or API configuration.` 
+        content: `I encountered an error: ${errorMsg}. Please check your connection or API configuration.` 
       });
     }
   };
@@ -104,7 +93,6 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
   };
 
   const handleGeneratePlan = async () => {
-    setGenerating(true);
     setPlanGenerating(true);
     addMessage({ role: "user", content: "Generate Floor Plan" });
     setTyping(true);
@@ -126,29 +114,17 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
       setFloorPlan(planData);
       setTyping(false);
       addMessage({ role: "assistant", content: "Your AI-generated floor plan is ready! I've optimised it for the local climate, Vastu alignment, and your budget range. Let me take you to the workspace." });
-      setGenerating(false);
       setPlanGenerating(false);
       showNotification("success", `Floor plan generated — Score: ${planData.plan_score?.total || 86}/100`);
       setTimeout(() => setStage("plan"), 1200);
-    } catch (error: any) {
-      setGenerating(false);
+    } catch (error: unknown) {
       setPlanGenerating(false);
       setTyping(false);
-      showNotification("error", error.message);
-      addMessage({ role: "assistant", content: `Failed to generate plan: ${error.message}` });
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      showNotification("error", errorMsg);
+      addMessage({ role: "assistant", content: `Failed to generate plan: ${errorMsg}` });
     }
   };
-
-
-  const lastIsAI = messages[messages.length - 1]?.role === "assistant";
-  
-  // Determine which suggestions to show based on missing requirements
-  const missingArr = [];
-  if (!memoryChips.find(c => c.label === "Plot")) missingArr.push("plot");
-  if (!memoryChips.find(c => c.label === "Bedrooms")) missingArr.push("bedrooms");
-  if (!memoryChips.find(c => c.label === "Style")) missingArr.push("style");
-  if (!memoryChips.find(c => c.label === "Budget")) missingArr.push("budget");
-  const nextMissing = missingArr[0] as keyof typeof SUGGESTIONS | undefined;
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
@@ -190,7 +166,6 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
               </div>
             </motion.div>
           ))}
-          {/* ... isTyping logic ... */}
           <div ref={bottomRef} />
         </div>
       </div>
@@ -201,13 +176,9 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
         padding: "16px 16px 24px", 
         background: "linear-gradient(transparent, var(--bg) 20%)",
         zIndex: 50,
-        // Match sidebar width on desktop
-        marginLeft: (typeof window !== 'undefined' && window.innerWidth >= 768) ? "var(--sidebar-width, 200px)" : "0",
-        transition: "margin-left 0.3s var(--ease-out)"
       }}>
         <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-          {/* ... suggestions ... */}
-          {!requirementsComplete && (
+          {!requirementsComplete ? (
             <form onSubmit={handleSend} style={{ display: "flex", gap: "8px", position: "relative" }}>
               <input
                 type="text"
@@ -241,8 +212,11 @@ export default function ChatStage({ onNext }: { onNext: () => void }) {
                 <Send size={14} />
               </button>
             </form>
+          ) : (
+            <button onClick={handleGeneratePlan} className="btn-accent" style={{ width: "100%", padding: "16px", borderRadius: "100px", fontWeight: 700 }}>
+              Generate Architectural Plan
+            </button>
           )}
-          {/* ... generate button ... */}
         </div>
       </div>
     </div>

@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { 
   Square, Minus, DoorOpen, LayoutTemplate, AlignVerticalSpaceAround, 
-  Sofa, Ruler, Type, Upload, Undo2, Redo2, Maximize, MinusCircle, PlusCircle,
-  ChevronDown, Sparkles
+  Sofa, Ruler, Type, Upload, Undo2, Redo2, Maximize,
+  ChevronDown, Sparkles, MinusCircle, PlusCircle
 } from "lucide-react";
-import { useAIEngine, RoomData } from "@/store/useAIEngine";
+import { useAIEngine } from "@/store/useAIEngine";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LEFT_TOOLS = [
@@ -28,9 +28,16 @@ export function PlanEditorView() {
   const { rooms, updateRoom, isAnalyzing, aiNotifications } = useAIEngine();
   const selectedRoom = rooms.find(r => r.id === selectedRoomId);
 
-  // Simple layout logic for rendering the boxes dynamically in the SVG
-  // This is a naive 1D stacking to simulate the layout just to show dynamic behavior
-  let currentY = 0;
+  // Pre-calculate room positions to avoid mutating variables during render
+  const roomLayouts = rooms.reduce((acc, room) => {
+    const lastRoom = acc[acc.length - 1];
+    const w = room.width * 20;
+    const h = room.length * 20;
+    const x = 200 - w / 2;
+    const y = lastRoom ? lastRoom.y + lastRoom.h + 2 : 0;
+    acc.push({ ...room, x, y, w, h });
+    return acc;
+  }, [] as (typeof rooms[0] & { x: number, y: number, w: number, h: number })[]);
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--bg)", color: "var(--t-primary)", position: "relative" }}>
@@ -92,28 +99,19 @@ export function PlanEditorView() {
           {/* Dynamic SVG Floor Plan */}
           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}>
             <svg viewBox="0 0 400 400" width="600" height="600" style={{ overflow: "visible" }}>
-              {rooms.map((room, index) => {
+              {roomLayouts.map((room) => {
                 const isSelected = selectedRoomId === room.id;
-                // Scale factor: 1 meter = 20px
-                const w = room.width * 20;
-                const h = room.length * 20;
-                
-                // Extremely simplified layout positioning (stacking) just for visualization
-                const x = 200 - w / 2;
-                const y = currentY;
-                currentY += h + 2; // add 2px gap
-
                 return (
-                  <g key={room.id} onClick={() => setSelectedRoomId(room.id)} style={{ cursor: "pointer" }} transform={`translate(${x}, ${y})`}>
+                  <g key={room.id} onClick={() => setSelectedRoomId(room.id)} style={{ cursor: "pointer" }} transform={`translate(${room.x}, ${room.y})`}>
                     <rect 
-                      width={w} height={h} 
+                      width={room.w} height={room.h} 
                       fill="var(--bg)" 
                       stroke={isSelected ? "var(--accent)" : "#333"} 
                       strokeWidth={isSelected ? 2 : 1} 
                       style={{ transition: "all 0.3s" }}
                     />
-                    <text x={w/2} y={h/2} fill="var(--t-primary)" fontSize="10" textAnchor="middle" dominantBaseline="middle" letterSpacing="1">{room.name.toUpperCase()}</text>
-                    <text x={w/2} y={h/2 + 14} fill="var(--t-muted)" fontSize="8" textAnchor="middle" dominantBaseline="middle">{room.width.toFixed(1)} x {room.length.toFixed(1)} m</text>
+                    <text x={room.w/2} y={room.h/2} fill="var(--t-primary)" fontSize="10" textAnchor="middle" dominantBaseline="middle" letterSpacing="1">{room.name.toUpperCase()}</text>
+                    <text x={room.w/2} y={room.h/2 + 14} fill="var(--t-muted)" fontSize="8" textAnchor="middle" dominantBaseline="middle">{room.width.toFixed(1)} x {room.length.toFixed(1)} m</text>
                   </g>
                 );
               })}
@@ -140,7 +138,7 @@ export function PlanEditorView() {
           <div style={{ position: "absolute", bottom: "24px", right: "24px", display: "flex", alignItems: "center", gap: "16px", background: "var(--surface-1)", padding: "8px 16px", borderRadius: "8px", border: "1px solid var(--border)" }}>
             <button className="btn-icon" style={{ border: "none", padding: 0 }}><Maximize size={16} color="var(--t-muted)" /></button>
             <div style={{ width: "1px", height: "16px", background: "var(--border)" }} />
-            <button className="btn-icon" style={{ border: "none", padding: 0 }}><Minus size={16} color="var(--t-muted)" /></button>
+            <button className="btn-icon" style={{ border: "none", padding: 0 }}><MinusCircle size={16} color="var(--t-muted)" /></button>
             <span style={{ fontSize: "12px" }}>100%</span>
             <button className="btn-icon" style={{ border: "none", padding: 0 }}><PlusCircle size={16} color="var(--t-muted)" /></button>
           </div>
@@ -238,7 +236,7 @@ export function PlanEditorView() {
                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                  {aiNotifications.slice(0, 2).map(n => (
                     <div key={n.id} style={{ padding: "12px", borderRadius: "8px", background: n.type === 'warning' ? "rgba(239,68,68,0.1)" : "rgba(198,176,138,0.1)", border: `1px solid ${n.type === 'warning' ? "rgba(239,68,68,0.2)" : "var(--border)"}`, fontSize: "12px", color: n.type === 'warning' ? "#ef4444" : "var(--accent)", lineHeight: 1.5 }}>
-                      {n.message}
+                       {n.message}
                     </div>
                  ))}
                </div>

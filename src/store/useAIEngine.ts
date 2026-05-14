@@ -57,7 +57,7 @@ const FINISH_COSTS: Record<string, number> = {
 };
 
 const calculateCost = (rooms: RoomData[]) => {
-  let baseConstructionCostPerSqm = 25000; // Base shell cost
+  const baseConstructionCostPerSqm = 25000; // Base shell cost
   let total = 0;
   rooms.forEach(r => {
     const area = r.width * r.length;

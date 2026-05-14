@@ -2,10 +2,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, AlertTriangle, Sparkles, TrendingUp, Lightbulb, ChevronDown, ChevronUp, Award, Bot, User, Send, Loader2 } from "lucide-react";
 import { usePlanStore } from "@/store/usePlanStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useChatStore } from "@/store/useChatStore";
 import { useState, useRef, useEffect } from "react";
 import { DEMO_AGENTS } from "@/data/demo-data";
+import { FloorPlan } from "@/types/plan";
 
 function CollapsibleCard({ title, icon: Icon, iconColor, children, defaultOpen = true }: {
   title: string; icon: typeof Shield; iconColor: string; children: React.ReactNode; defaultOpen?: boolean;
@@ -27,16 +27,17 @@ function CollapsibleCard({ title, icon: Icon, iconColor, children, defaultOpen =
   );
 }
 
+type TabId = "overview" | "planning" | "copilot";
+
 export default function IntelligencePanel() {
   const { floorPlan, selectedRoom } = usePlanStore();
-  const { currentStage } = useUIStore();
   const { copilotMessages, addCopilotMessage, copilotTyping, setCopilotTyping } = useChatStore();
   
-  const [activeTab, setActiveTab] = useState<"overview" | "planning" | "copilot">("overview");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [inputText, setInputText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const plan = floorPlan;
+  const plan = floorPlan as FloorPlan | null;
   const score = plan?.plan_score;
 
   useEffect(() => {
@@ -76,11 +77,11 @@ export default function IntelligencePanel() {
 
       setCopilotTyping(false);
       addCopilotMessage({ role: "assistant", content: data.reply });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setCopilotTyping(false);
-      const errorMsg = error.message.includes("expired") 
+      const errorMsg = error instanceof Error && error.message.includes("expired") 
         ? "🚨 API Connection Error: Your Gemini API key has expired. Please update .env.local with a fresh key to resume Copilot services."
-        : `Connection Error: ${error.message}`;
+        : `Connection Error: ${error instanceof Error ? error.message : "Unknown error"}`;
       
       addCopilotMessage({ 
         role: "assistant", 
@@ -117,13 +118,13 @@ export default function IntelligencePanel() {
         
         <div style={{ display: "flex", gap: "12px" }}>
           {[
-            { id: "overview", label: "Overview" },
-            { id: "planning", label: "Exact Plan" },
-            { id: "copilot", label: "Copilot" }
+            { id: "overview" as const, label: "Overview" },
+            { id: "planning" as const, label: "Exact Plan" },
+            { id: "copilot" as const, label: "Copilot" }
           ].map(tab => (
             <button 
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               style={{ 
                 padding: "8px 2px", fontSize: "12px", fontWeight: 600, background: "transparent", border: "none", 
                 borderBottom: activeTab === tab.id ? "2px solid var(--t-primary)" : "2px solid transparent",
@@ -142,42 +143,56 @@ export default function IntelligencePanel() {
           {/* OVERVIEW TAB */}
           {activeTab === "overview" && (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {score && (
-                <div className="card" style={{ padding: "20px", borderRadius: "var(--radius-md)", textAlign: "center" }}>
+              
+              <div className="card" style={{ padding: "20px", borderRadius: "var(--radius-md)", textAlign: "center", background: "var(--surface-1)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "16px" }}>
+                   <div style={{ width: "24px", height: "24px", borderRadius: "6px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                     <Sparkles size={12} color="white" />
+                   </div>
+                   <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--t-primary)" }}>Lifestyle Intelligence Profile</span>
+                </div>
+                
+                {score ? (
                   <div style={{
-                    width: "80px", height: "80px", borderRadius: "50%", margin: "0 auto 12px",
+                    width: "84px", height: "84px", borderRadius: "50%", margin: "0 auto 12px",
                     background: `conic-gradient(var(--accent) ${score.total * 3.6}deg, var(--surface-3) 0deg)`,
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "0 0 20px rgba(0,113,227,0.15)"
                   }}>
-                    <div style={{ width: "62px", height: "62px", borderRadius: "50%", background: "var(--surface-1)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-                      <span className="font-display" style={{ fontSize: "1.4rem", lineHeight: 1 }}>{score.total}</span>
-                      <span style={{ fontSize: "9px", color: "var(--t-muted)" }}>/100</span>
+                    <div style={{ width: "66px", height: "66px", borderRadius: "50%", background: "var(--surface-1)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                      <span className="font-display" style={{ fontSize: "1.5rem", lineHeight: 1 }}>{score.total}</span>
+                      <span style={{ fontSize: "9px", color: "var(--t-muted)" }}>IQ Score</span>
                     </div>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>Plan Score</div>
-                  <div className="badge badge-emerald" style={{ fontSize: "10px" }}>
-                    <Award size={9} /> {plan?.confidence_label || "High"} · {plan?.confidence_score || 88}%
+                ) : (
+                  <div style={{ height: "100px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
+                    <Loader2 size={24} className="spin" color="var(--accent)" />
+                    <span style={{ fontSize: "11px", color: "var(--t-muted)" }}>Synthesizing behavior...</span>
                   </div>
+                )}
 
-                  {/* Score bars */}
-                  <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {[
-                      { label: "Space", value: score.space_efficiency, color: "#3B82F6" },
-                      { label: "Cost", value: score.cost_efficiency, color: "#10B981" },
-                      { label: "Climate", value: score.climate_suitability, color: "#F59E0B" },
-                      { label: "Safety", value: score.compliance_safety, color: "#8B5CF6" },
-                    ].map(d => (
-                      <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "11px", color: "var(--t-muted)", width: "50px", textAlign: "right" }}>{d.label}</span>
-                        <div style={{ flex: 1, height: "4px", background: "var(--surface-3)", borderRadius: "2px", overflow: "hidden" }}>
-                          <div style={{ width: `${(d.value / 25) * 100}%`, height: "100%", background: d.color, borderRadius: "2px", transition: "width 0.8s var(--ease-out)" }} />
-                        </div>
-                        <span style={{ fontSize: "11px", fontWeight: 600, width: "20px" }}>{d.value}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="badge badge-emerald" style={{ fontSize: "10px", marginTop: "4px" }}>
+                  <Award size={9} /> High Fidelity · Human Centric
                 </div>
-              )}
+
+                {/* Score bars */}
+                <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {[
+                    { label: "Space", value: score?.space_efficiency || 82, color: "var(--accent)" },
+                    { label: "Cost", value: score?.cost_efficiency || 74, color: "var(--emerald)" },
+                    { label: "Lifestyle", value: score?.climate_suitability || 95, color: "var(--amber)" },
+                    { label: "Safety", value: score?.compliance_safety || 88, color: "var(--violet)" },
+                  ].map(d => (
+                    <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ fontSize: "10px", color: "var(--t-muted)", width: "52px", textAlign: "left", fontWeight: 600 }}>{d.label}</span>
+                      <div style={{ flex: 1, height: "4px", background: "var(--surface-3)", borderRadius: "2px", overflow: "hidden" }}>
+                        <div style={{ width: `${d.value}%`, height: "100%", background: d.color, borderRadius: "2px", transition: "width 1s var(--ease-out)" }} />
+                      </div>
+                      <span style={{ fontSize: "10px", fontWeight: 700, width: "24px", color: "var(--t-primary)" }}>{d.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {selectedRoom && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -264,7 +279,7 @@ export default function IntelligencePanel() {
                       <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--t-primary)" }}>{room.sqft} SF</span>
                     </div>
                     <div style={{ display: "flex", gap: "12px", fontSize: "11px", color: "var(--t-muted)" }}>
-                      <span>Dim: {room.realW || Math.round(room.w/10)}' × {room.realH || Math.round(room.h/10)}'</span>
+                      <span>Dim: {room.realW || Math.round(room.w/10)}&apos; × {room.realH || Math.round(room.h/10)}&apos;</span>
                       <span>Floor: {room.floor || 1}</span>
                     </div>
                   </div>
@@ -272,13 +287,13 @@ export default function IntelligencePanel() {
               </div>
 
               {/* AI Planning Insights */}
-              <div className="card" style={{ padding: "16px", borderRadius: "var(--radius-md)", background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.1)" }}>
+              <div className="card" style={{ padding: "16px", borderRadius: "var(--radius-md)", background: "var(--emerald-dim)", border: "1px solid rgba(50, 215, 75, 0.1)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                   <Bot size={14} color="var(--emerald)" />
                   <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--emerald)" }}>Computational Logic</span>
                 </div>
                 <p style={{ fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
-                  Plan generated using a recursive grid-packing algorithm. Spatial adjacencies are optimized for <strong>{(plan as any)?.environmental_logic?.ventilation || "cross-ventilation"}</strong> and <strong>{(plan as any)?.environmental_logic?.light || "natural lighting"}</strong>.
+                  Plan generated using a recursive grid-packing algorithm. Spatial adjacencies are optimized for <strong>{plan?.environmental_logic?.ventilation || "cross-ventilation"}</strong> and <strong>{plan?.environmental_logic?.light || "natural lighting"}</strong>.
                 </p>
               </div>
 

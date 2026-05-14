@@ -22,7 +22,10 @@ const STATS = [
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
   if (!mounted) return null;
 
   return (
@@ -57,7 +60,7 @@ export default function HomePage() {
           </nav>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
             <Link href="/dashboard" className="btn-ghost" style={{ padding: "8px 24px", fontSize: "13px" }}>
-              Login
+              Dashboard
             </Link>
             <Link href="/project/new" className="btn-accent" style={{ padding: "8px 24px", fontSize: "13px" }}>
               <Sparkles size={14} /> New Project
@@ -120,7 +123,7 @@ export default function HomePage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}
+          className="grid-responsive-4"
         >
           {STATS.map((s, i) => (
             <div key={i} style={{ textAlign: "center", padding: "24px" }}>
@@ -148,7 +151,7 @@ export default function HomePage() {
           </p>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+        <div className="grid-responsive-3">
           {FEATURES.map((f, i) => (
             <motion.div
               key={i}

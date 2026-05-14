@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Building2, Check, Sparkles, ArrowRight, Zap, Crown, ChevronLeft } from "lucide-react";
+import { Building2, Check, Sparkles, ArrowRight, Zap, Crown } from "lucide-react";
 
 const PLANS = [
   {
@@ -24,7 +24,10 @@ const PLANS = [
 
 export default function PricingPage() {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
   if (!mounted) return null;
 
   return (
@@ -66,7 +69,7 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section style={{ maxWidth: "1000px", margin: "0 auto 120px", padding: "0 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", alignItems: "stretch" }}>
+        <div className="grid-responsive-3-pricing">
           {PLANS.map((plan, i) => (
             <motion.div
               key={plan.id}
@@ -108,9 +111,9 @@ export default function PricingPage() {
                 ))}
               </div>
 
-              <button className={plan.highlighted ? "btn-accent" : "btn-ghost"} style={{ width: "100%", padding: "14px", justifyContent: "center" }}>
+              <Link href={`/project/new?plan=${plan.id}`} className={plan.highlighted ? "btn-accent" : "btn-secondary"} style={{ width: "100%", padding: "14px", justifyContent: "center", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--radius-md)", fontWeight: 600, fontSize: "14px", textDecoration: "none" }}>
                 {plan.cta} <ArrowRight size={14} />
-              </button>
+              </Link>
             </motion.div>
           ))}
         </div>

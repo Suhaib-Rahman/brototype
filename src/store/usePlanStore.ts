@@ -14,7 +14,11 @@ interface PlanState {
   setFloorPlan: (plan: FloorPlan) => void;
   selectRoom: (room: Room | null) => void;
   updateFloorPlan: (plan: FloorPlan) => void;
-  updateRoomPosition: (id: string, x: number, y: number) => void;
+  updateRoom: (id: string, updates: Partial<Room>) => void;
+  isCinematic: boolean;
+  environment: 'day' | 'sunset' | 'night' | 'cloudy';
+  setCinematic: (v: boolean) => void;
+  setEnvironment: (env: 'day' | 'sunset' | 'night' | 'cloudy') => void;
   setGenerating: (v: boolean) => void;
   setEditing: (v: boolean) => void;
   undo: () => void;
@@ -24,7 +28,7 @@ interface PlanState {
 
 export const usePlanStore = create<PlanState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       floorPlan: null,
       selectedRoom: null,
       editHistory: [],
@@ -52,21 +56,24 @@ export const usePlanStore = create<PlanState>()(
           };
         }),
 
-      updateRoomPosition: (id, x, y) =>
+      updateRoom: (id, updates) =>
         set((state) => {
           if (!state.floorPlan) return state;
           const newRooms = state.floorPlan.rooms.map(r => 
-            r.id === id ? { ...r, x, y } : r
+            r.id === id ? { ...r, ...updates } : r
           );
           const newPlan = { ...state.floorPlan, rooms: newRooms };
           
-          // Don't add every single pixel drag to history to avoid blowing up memory, 
-          // but we do update the current floor plan state.
           return {
             floorPlan: newPlan,
-            selectedRoom: state.selectedRoom?.id === id ? { ...state.selectedRoom, x, y } : state.selectedRoom
+            selectedRoom: state.selectedRoom?.id === id ? { ...state.selectedRoom, ...updates } : state.selectedRoom
           };
         }),
+
+      isCinematic: false,
+      environment: 'sunset',
+      setCinematic: (v) => set({ isCinematic: v }),
+      setEnvironment: (env) => set({ environment: env }),
 
       setGenerating: (v) => set({ isGenerating: v }),
       setEditing: (v) => set({ isEditing: v }),

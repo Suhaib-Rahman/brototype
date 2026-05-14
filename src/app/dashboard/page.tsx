@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2, Plus, Layout, Settings, FileText,
-  ChevronRight, MapPin, Search, Bell, LogOut, Box,
-  Sparkles, Compass, BarChart3, Edit3, User, Target,
-  Filter, Check, X, TrendingUp
+  Building2, Plus, Layout, Settings,
+  Search, Bell, Box,
+  Sparkles, Compass, BarChart3,
+  X, Menu, MapPin, Target, Filter, Edit3
 } from "lucide-react";
 import { useChatStore } from "@/store/useChatStore";
 
@@ -28,19 +28,42 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const { customer } = useChatStore();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   if (!mounted) return null;
 
   const userName = customer?.name && customer.name !== "Guest" ? customer.name : "Architect";
 
   return (
-    <div style={{ height: "100vh", display: "flex", background: "var(--bg)", color: "var(--t-primary)", overflow: "hidden" }}>
+    <div style={{ height: "100vh", display: "flex", background: "var(--bg)", color: "var(--t-primary)", overflow: "hidden", position: "relative" }}>
 
       {/* ── 1. Left Sidebar ───────────────────────────────────── */}
-      <aside style={{ width: "260px", borderRight: "1px solid var(--border)", background: "var(--surface-1)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
-        <div style={{ padding: "24px 20px" }}>
+      <aside style={{ 
+        width: "260px", 
+        borderRight: "1px solid var(--border)", 
+        background: "var(--surface-1)", 
+        display: "flex", 
+        flexDirection: "column", 
+        flexShrink: 0,
+        position: isMobile ? "absolute" : "relative",
+        left: isMobile ? (sidebarOpen ? 0 : "-260px") : 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 1000,
+        transition: "left 0.3s var(--ease-out)",
+        boxShadow: isMobile && sidebarOpen ? "20px 0 50px rgba(0,0,0,0.5)" : "none"
+      }}>
+        <div style={{ padding: "24px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Building2 size={16} color="white" />
@@ -49,6 +72,9 @@ export default function DashboardPage() {
               Architectural <span className="gradient-text">AI</span>
             </span>
           </Link>
+          {isMobile && (
+            <button className="btn-icon" onClick={() => setSidebarOpen(false)}><X size={18} /></button>
+          )}
         </div>
 
         <nav style={{ flex: 1, padding: "0 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -61,7 +87,7 @@ export default function DashboardPage() {
           ].map((item) => {
             const isActive = activeTab === item.id;
             return (
-              <button key={item.id} onClick={() => setActiveTab(item.id)} className="sidebar-link" style={{
+              <button key={item.id} onClick={() => { setActiveTab(item.id); if(isMobile) setSidebarOpen(false); }} className="sidebar-link" style={{
                 display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", borderRadius: "8px",
                 background: isActive ? "var(--surface-2)" : "transparent",
                 color: isActive ? "var(--t-primary)" : "var(--t-secondary)",
@@ -74,7 +100,7 @@ export default function DashboardPage() {
           })}
 
           <div style={{ padding: "24px 8px 12px", fontSize: "11px", fontWeight: 700, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Support</div>
-          <button onClick={() => setActiveTab("settings")} className="sidebar-link" style={{
+          <button onClick={() => { setActiveTab("settings"); if(isMobile) setSidebarOpen(false); }} className="sidebar-link" style={{
             display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", borderRadius: "8px",
             background: activeTab === "settings" ? "var(--surface-2)" : "transparent",
             color: activeTab === "settings" ? "var(--t-primary)" : "var(--t-secondary)",
@@ -95,20 +121,25 @@ export default function DashboardPage() {
       <main style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
         {/* Top Bar */}
-        <header style={{ height: "64px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", flexShrink: 0, background: "var(--bg)" }}>
-          <div style={{ position: "relative", width: "320px" }}>
-            <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--t-muted)" }} />
-            <input
-              type="text" placeholder="Search projects or use ⌘K..."
-              className="input-field"
-              style={{ paddingLeft: "36px", paddingTop: "8px", paddingBottom: "8px", borderRadius: "100px", background: "var(--surface-1)", border: "1px solid var(--border)", width: "100%", fontSize: "13px" }}
-            />
+        <header style={{ height: "64px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "0 16px" : "0 32px", flexShrink: 0, background: "var(--bg)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {isMobile && (
+              <button className="btn-icon" onClick={() => setSidebarOpen(true)}><Menu size={18} /></button>
+            )}
+            <div style={{ position: "relative", width: isMobile ? "180px" : "320px" }}>
+              <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--t-muted)" }} />
+              <input
+                type="text" placeholder={isMobile ? "Search..." : "Search projects or use ⌘K..."}
+                className="input-field"
+                style={{ paddingLeft: "36px", paddingTop: "8px", paddingBottom: "8px", borderRadius: "100px", background: "var(--surface-1)", border: "1px solid var(--border)", width: "100%", fontSize: "13px" }}
+              />
+            </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <button className="btn-icon"><Bell size={18} /></button>
+          <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "12px" : "20px" }}>
+            <button className="btn-icon desktop-only"><Bell size={18} /></button>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div style={{ textAlign: "right" }}>
+              <div style={{ textAlign: "right" }} className="mobile-hidden">
                 <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--t-primary)" }}>{userName}</div>
                 <div style={{ fontSize: "11px", color: "var(--emerald)", fontWeight: 600, textTransform: "uppercase" }}>PRO Plan</div>
               </div>
@@ -120,7 +151,7 @@ export default function DashboardPage() {
         </header>
 
         {/* Scrollable Center Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "40px 32px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: isMobile ? "24px 16px" : "40px 32px" }}>
 
           <AnimatePresence mode="wait">
 
@@ -128,13 +159,13 @@ export default function DashboardPage() {
             {activeTab === "dashboard" && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                 <div style={{ marginBottom: "40px" }}>
-                  <h1 className="font-display" style={{ fontSize: "28px", letterSpacing: "-0.02em", marginBottom: "8px" }}>
+                  <h1 className="font-display" style={{ fontSize: isMobile ? "22px" : "28px", letterSpacing: "-0.02em", marginBottom: "8px" }}>
                     Welcome back, {userName} 👋
                   </h1>
                   <p style={{ color: "var(--t-secondary)", fontSize: "15px" }}>Ready to design your next project? Here is your overview.</p>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "40px" }}>
+                <div className="grid-responsive-4" style={{ marginBottom: "40px" }}>
                   {[
                     { label: "Total Projects", value: "4", icon: Box, color: "var(--cyan)" },
                     { label: "Avg. Budget", value: "₹85L", icon: BarChart3, color: "var(--emerald)" },
@@ -154,17 +185,17 @@ export default function DashboardPage() {
                 </div>
 
                 <div style={{ marginBottom: "40px" }}>
-                  <Link href="/project/new" className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px", borderRadius: "16px", background: "var(--gradient-glow)", border: "1px solid rgba(59,130,246,0.2)", textDecoration: "none", cursor: "pointer" }}>
+                  <Link href="/project/new" className="card" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", padding: "24px", borderRadius: "16px", background: "var(--gradient-glow)", border: "1px solid rgba(59,130,246,0.2)", textDecoration: "none", cursor: "pointer", gap: "20px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                       <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(34,211,238,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--cyan)" }}>
                         <Sparkles size={24} />
                       </div>
                       <div>
                         <div style={{ fontSize: "13px", color: "var(--cyan)", fontWeight: 600, marginBottom: "4px" }}>Resume Work</div>
-                        <div style={{ fontSize: "18px", fontWeight: 600, color: "var(--t-primary)" }}>Continue working on Seafront Villa Redesign</div>
+                        <div style={{ fontSize: isMobile ? "16px" : "18px", fontWeight: 600, color: "var(--t-primary)" }}>Continue working on Seafront Villa Redesign</div>
                       </div>
                     </div>
-                    <div className="btn-primary" style={{ padding: "10px 20px", borderRadius: "100px", fontSize: "13px" }}>Open Project</div>
+                    <div className="btn-primary" style={{ padding: "10px 20px", borderRadius: "100px", fontSize: "13px", width: isMobile ? "100%" : "auto", textAlign: "center" }}>Open Project</div>
                   </Link>
                 </div>
 
@@ -175,27 +206,29 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     {MOCK_PROJECTS.slice(0, 3).map((project) => (
-                      <div key={project.id} className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderRadius: "16px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "20px", flex: 1 }}>
-                          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div key={project.id} className="card" style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", padding: "16px 20px", borderRadius: "16px", gap: "16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "20px", flex: 1, width: "100%" }}>
+                          <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                             <Layout size={18} color="var(--t-secondary)" />
                           </div>
-                          <div style={{ width: "250px" }}>
+                          <div style={{ flex: 1 }}>
                             <div style={{ fontSize: "15px", fontWeight: 600, marginBottom: "4px" }}>{project.name}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "var(--t-muted)" }}>
                               <MapPin size={10} /> {project.location}
                             </div>
                           </div>
-                          <div style={{ width: "120px" }}>
-                            <div style={{ fontSize: "11px", color: "var(--t-muted)", marginBottom: "4px" }}>Status</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              <div style={{ width: "6px", height: "6px", borderRadius: "100px", background: project.status === "Ready" ? "var(--emerald)" : project.status === "Designing" ? "var(--cyan)" : "var(--amber)" }} />
-                              <span style={{ fontSize: "13px", color: "var(--t-secondary)" }}>{project.status}</span>
+                          {!isMobile && (
+                            <div style={{ width: "120px" }}>
+                              <div style={{ fontSize: "11px", color: "var(--t-muted)", marginBottom: "4px" }}>Status</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <div style={{ width: "6px", height: "6px", borderRadius: "100px", background: project.status === "Ready" ? "var(--emerald)" : project.status === "Designing" ? "var(--cyan)" : "var(--amber)" }} />
+                                <span style={{ fontSize: "13px", color: "var(--t-secondary)" }}>{project.status}</span>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <Link href="/project/new" className="btn-primary" style={{ padding: "8px 16px", fontSize: "12px", borderRadius: "8px", textDecoration: "none" }}>Open</Link>
+                        <div style={{ display: "flex", gap: "8px", width: isMobile ? "100%" : "auto" }}>
+                          <Link href="/project/new" className="btn-primary" style={{ padding: "8px 16px", fontSize: "12px", borderRadius: "8px", textDecoration: "none", flex: 1, textAlign: "center" }}>Open</Link>
                         </div>
                       </div>
                     ))}
@@ -227,9 +260,9 @@ export default function DashboardPage() {
                     <thead>
                       <tr style={{ background: "var(--surface-1)", borderBottom: "1px solid var(--border)" }}>
                         <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase" }}>Project Name</th>
-                        <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase" }}>Type</th>
+                        <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase" }} className="mobile-hidden">Type</th>
                         <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase" }}>Status</th>
-                        <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase" }}>Est. Cost</th>
+                        <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase" }} className="mobile-hidden">Est. Cost</th>
                         <th style={{ padding: "16px 24px", fontSize: "12px", color: "var(--t-muted)", fontWeight: 600, textTransform: "uppercase", textAlign: "right" }}>Actions</th>
                       </tr>
                     </thead>
@@ -238,16 +271,16 @@ export default function DashboardPage() {
                         <tr key={project.id} style={{ borderBottom: "1px solid var(--border)" }}>
                           <td style={{ padding: "20px 24px" }}>
                             <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-primary)", marginBottom: "4px" }}>{project.name}</div>
-                            <div style={{ fontSize: "12px", color: "var(--t-secondary)" }}>{project.location} • Last edited {project.date}</div>
+                            <div style={{ fontSize: "12px", color: "var(--t-secondary)" }}>{project.location}</div>
                           </td>
-                          <td style={{ padding: "20px 24px", fontSize: "13px", color: "var(--t-secondary)" }}>{project.type}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "13px", color: "var(--t-secondary)" }} className="mobile-hidden">{project.type}</td>
                           <td style={{ padding: "20px 24px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                               <div style={{ width: "6px", height: "6px", borderRadius: "100px", background: project.status === "Ready" ? "var(--emerald)" : project.status === "Designing" ? "var(--cyan)" : "var(--amber)" }} />
                               <span style={{ fontSize: "13px", color: "var(--t-secondary)" }}>{project.status}</span>
                             </div>
                           </td>
-                          <td style={{ padding: "20px 24px", fontSize: "13px", color: "var(--t-secondary)" }}>{project.cost}</td>
+                          <td style={{ padding: "20px 24px", fontSize: "13px", color: "var(--t-secondary)" }} className="mobile-hidden">{project.cost}</td>
                           <td style={{ padding: "20px 24px", textAlign: "right" }}>
                             <Link href="/project/new" className="btn-secondary" style={{ padding: "8px 16px", fontSize: "12px", borderRadius: "8px", textDecoration: "none" }}>Open</Link>
                           </td>
@@ -267,7 +300,7 @@ export default function DashboardPage() {
                   <p style={{ color: "var(--t-secondary)", fontSize: "15px" }}>Start your next project with highly-optimized, AI-generated architectural templates.</p>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                <div className="grid-responsive-3">
                   {EXPLORE_TEMPLATES.map((template) => (
                     <div key={template.id} className="card" style={{ borderRadius: "16px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
                       <div style={{ height: "180px", background: "var(--surface-2)", position: "relative", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -298,10 +331,10 @@ export default function DashboardPage() {
                   <p style={{ color: "var(--t-secondary)", fontSize: "15px" }}>Real-time material cost intelligence for your active regions.</p>
                 </div>
 
-                <div style={{ display: "flex", gap: "24px", marginBottom: "32px" }}>
+                <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: "24px", marginBottom: "32px" }}>
                   <div className="card" style={{ flex: 1, padding: "24px", borderRadius: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(245,158,11,0.1)", color: "var(--amber)", display: "flex", alignItems: "center", justifyContent: "center" }}><TrendingUp size={20} /></div>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(245,158,11,0.1)", color: "var(--amber)", display: "flex", alignItems: "center", justifyContent: "center" }}><BarChart3 size={20} /></div>
                       <div>
                         <div style={{ fontSize: "13px", color: "var(--t-secondary)" }}>Steel (TMT Fe500D)</div>
                         <div style={{ fontSize: "20px", fontWeight: 600 }}>+4.2% <span style={{ fontSize: "12px", color: "var(--t-muted)", fontWeight: 400 }}>this quarter</span></div>
@@ -312,7 +345,7 @@ export default function DashboardPage() {
 
                   <div className="card" style={{ flex: 1, padding: "24px", borderRadius: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(34,211,238,0.1)", color: "var(--cyan)", display: "flex", alignItems: "center", justifyContent: "center" }}><TrendingUp size={20} style={{ transform: "scaleY(-1)" }} /></div>
+                      <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "rgba(34,211,238,0.1)", color: "var(--cyan)", display: "flex", alignItems: "center", justifyContent: "center" }}><BarChart3 size={20} style={{ transform: "scaleY(-1)" }} /></div>
                       <div>
                         <div style={{ fontSize: "13px", color: "var(--t-secondary)" }}>Cement (OPC 53 Grade)</div>
                         <div style={{ fontSize: "20px", fontWeight: 600 }}>-1.5% <span style={{ fontSize: "12px", color: "var(--t-muted)", fontWeight: 400 }}>this quarter</span></div>
@@ -339,7 +372,7 @@ export default function DashboardPage() {
                   <p style={{ color: "var(--t-secondary)", fontSize: "15px" }}>Manage your profile and platform preferences.</p>
                 </div>
 
-                <div className="card" style={{ borderRadius: "16px", padding: "32px", maxWidth: "600px" }}>
+                <div className="card" style={{ borderRadius: "16px", padding: isMobile ? "20px" : "32px", maxWidth: "600px" }}>
                   <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "24px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>Profile Information</h2>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -386,67 +419,69 @@ export default function DashboardPage() {
       </main>
 
       {/* ── 3. Right Sidebar (AI Insights) ────────────────────── */}
-      <aside style={{ width: "320px", borderLeft: "1px solid var(--border)", background: "var(--surface-1)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+      {!isMobile && (
+        <aside style={{ width: "320px", borderLeft: "1px solid var(--border)", background: "var(--surface-1)", display: "flex", flexDirection: "column", flexShrink: 0 }}>
 
-        {/* User Profile Mini */}
-        <div style={{ padding: "24px", borderBottom: "1px solid var(--border)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-            <h3 className="font-display" style={{ fontSize: "16px" }}>Profile Summary</h3>
-            <button onClick={() => setActiveTab("settings")} className="btn-icon" style={{ width: "24px", height: "24px" }}><Edit3 size={12} /></button>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--t-muted)" }}>Occupation</span>
-              <span style={{ color: "var(--t-primary)", fontWeight: 500 }}>Real Estate Developer</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--t-muted)" }}>Pref. Type</span>
-              <span style={{ color: "var(--t-primary)", fontWeight: 500 }}>Residential Villas</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "var(--t-muted)" }}>Avg Budget</span>
-              <span style={{ color: "var(--t-primary)", fontWeight: 500 }}>₹1Cr+</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Dynamic AI Insights */}
-        <div style={{ padding: "24px", flex: 1, overflowY: "auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-            <Sparkles size={16} color="var(--cyan)" />
-            <h3 className="font-display" style={{ fontSize: "16px" }}>AI Intelligence</h3>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {/* Insight 1 */}
-            <div className="card" style={{ padding: "16px", borderRadius: "12px", border: "1px solid rgba(34,211,238,0.2)", background: "rgba(34,211,238,0.03)" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--cyan)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Cost Optimization</div>
-              <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.5 }}>
-                You can optimize your active project cost by <span style={{ color: "var(--t-primary)", fontWeight: 600 }}>12%</span> by switching to AAC blocks instead of Red Bricks.
-              </p>
-              <button style={{ background: "none", border: "none", color: "var(--cyan)", fontSize: "12px", fontWeight: 600, marginTop: "12px", padding: 0, cursor: "pointer" }}>Apply recommendation →</button>
+          {/* User Profile Mini */}
+          <div style={{ padding: "24px", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 className="font-display" style={{ fontSize: "16px" }}>Profile Summary</h3>
+              <button onClick={() => setActiveTab("settings")} className="btn-icon" style={{ width: "24px", height: "24px" }}><Edit3 size={12} /></button>
             </div>
 
-            {/* Insight 2 */}
-            <div className="card" style={{ padding: "16px", borderRadius: "12px", border: "1px solid rgba(59,130,246,0.2)", background: "rgba(59,130,246,0.03)" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--blue)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Design Alert</div>
-              <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.5 }}>
-                Consider better ventilation for your <span style={{ color: "var(--t-primary)", fontWeight: 600 }}>Seafront Villa</span> project due to high coastal humidity in Kochi.
-              </p>
-            </div>
-
-            {/* Insight 3 */}
-            <div className="card" style={{ padding: "16px", borderRadius: "12px", border: "1px solid rgba(245,158,11,0.2)", background: "rgba(245,158,11,0.03)" }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--amber)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Market Trend</div>
-              <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.5 }}>
-                Smart home integrations have increased property valuation by 18% in your preferred regions this year.
-              </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--t-muted)" }}>Occupation</span>
+                <span style={{ color: "var(--t-primary)", fontWeight: 500 }}>Real Estate Developer</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--t-muted)" }}>Pref. Type</span>
+                <span style={{ color: "var(--t-primary)", fontWeight: 500 }}>Residential Villas</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--t-muted)" }}>Avg Budget</span>
+                <span style={{ color: "var(--t-primary)", fontWeight: 500 }}>₹1Cr+</span>
+              </div>
             </div>
           </div>
-        </div>
 
-      </aside>
+          {/* Dynamic AI Insights */}
+          <div style={{ padding: "24px", flex: 1, overflowY: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+              <Sparkles size={16} color="var(--cyan)" />
+              <h3 className="font-display" style={{ fontSize: "16px" }}>AI Intelligence</h3>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Insight 1 */}
+              <div className="card" style={{ padding: "16px", borderRadius: "12px", border: "1px solid rgba(34,211,238,0.2)", background: "rgba(34,211,238,0.03)" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--cyan)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Cost Optimization</div>
+                <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.5 }}>
+                  You can optimize your active project cost by <span style={{ color: "var(--t-primary)", fontWeight: 600 }}>12%</span> by switching to AAC blocks instead of Red Bricks.
+                </p>
+                <button style={{ background: "none", border: "none", color: "var(--cyan)", fontSize: "12px", fontWeight: 600, marginTop: "12px", padding: 0, cursor: "pointer" }}>Apply recommendation →</button>
+              </div>
+
+              {/* Insight 2 */}
+              <div className="card" style={{ padding: "16px", borderRadius: "12px", border: "1px solid rgba(59,130,246,0.2)", background: "rgba(59,130,246,0.03)" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#3b82f6", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Design Alert</div>
+                <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.5 }}>
+                  Consider better ventilation for your <span style={{ color: "var(--t-primary)", fontWeight: 600 }}>Seafront Villa</span> project due to high coastal humidity in Kochi.
+                </p>
+              </div>
+
+              {/* Insight 3 */}
+              <div className="card" style={{ padding: "16px", borderRadius: "12px", border: "1px solid rgba(245,158,11,0.2)", background: "rgba(245,158,11,0.03)" }}>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--amber)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>Market Trend</div>
+                <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.5 }}>
+                  Smart home integrations have increased property valuation by 18% in your preferred regions this year.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+      )}
 
     </div>
   );

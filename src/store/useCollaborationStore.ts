@@ -164,6 +164,13 @@ export const useCollaborationStore = create<CollaborationState>()(
     }),
     {
       name: "archai-collaboration",
+      partialize: (state) => ({
+        session: state.session,
+        selectedArchitect: state.selectedArchitect
+          ? { id: state.selectedArchitect.id, name: state.selectedArchitect.name }
+          : null,
+        // Don't persist availableArchitects — it's static mock data
+      }),
     }
   )
 );

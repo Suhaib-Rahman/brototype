@@ -72,6 +72,9 @@ const calculateCost = (rooms: RoomData[]) => {
   return total;
 };
 
+let analysisTimer: ReturnType<typeof setTimeout> | null = null;
+let notifyTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const useAIEngine = create<AIEngineState>((set, get) => ({
   rooms: DEFAULT_ROOMS,
   totalArea: calculateTotalArea(DEFAULT_ROOMS),
@@ -92,19 +95,21 @@ export const useAIEngine = create<AIEngineState>((set, get) => ({
     });
 
     // Trigger an AI response dynamically
-    if (updates.width || updates.length) {
-      get().triggerAIAnalysis('Evaluating spatial impact...', 1500);
-      
-      const room = get().rooms.find(r => r.id === id);
-      if (room && updates.width && updates.width > 8) {
-        setTimeout(() => {
-          get().addNotification({
-            message: `Structural span for ${room.name} exceeds 8m. Added secondary beam requirements to structural estimate.`,
-            type: 'warning'
-          });
-        }, 1600);
+      if (updates.width || updates.length) {
+        get().triggerAIAnalysis('Evaluating spatial impact...', 1500);
+        
+        const room = get().rooms.find(r => r.id === id);
+        if (room && updates.width && updates.width > 8) {
+          if (notifyTimer) clearTimeout(notifyTimer);
+          notifyTimer = setTimeout(() => {
+            get().addNotification({
+              message: `Structural span for ${room.name} exceeds 8m. Added secondary beam requirements to structural estimate.`,
+              type: 'warning'
+            });
+            notifyTimer = null;
+          }, 1600);
+        }
       }
-    }
     
     if (updates.floorFinish || updates.wallFinish) {
       get().triggerAIAnalysis('Recalculating material BOM...', 1000);
@@ -112,9 +117,11 @@ export const useAIEngine = create<AIEngineState>((set, get) => ({
   },
 
   triggerAIAnalysis: (processName, duration = 2000) => {
+    if (analysisTimer) clearTimeout(analysisTimer);
     set({ isAnalyzing: true, activeProcess: processName });
-    setTimeout(() => {
+    analysisTimer = setTimeout(() => {
       set({ isAnalyzing: false, activeProcess: null });
+      analysisTimer = null;
     }, duration);
   },
 

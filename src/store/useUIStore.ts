@@ -30,6 +30,8 @@ interface UIState {
   setGlobalLoading: (v: boolean, msg?: string) => void;
 }
 
+let notificationTimer: ReturnType<typeof setTimeout> | null = null;
+
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
@@ -53,8 +55,12 @@ export const useUIStore = create<UIState>()(
       setPalette: (p) => set({ palette: p }),
 
       showNotification: (type, message) => {
+        if (notificationTimer) clearTimeout(notificationTimer);
         set({ notification: { type, message } });
-        setTimeout(() => set({ notification: null }), 4000);
+        notificationTimer = setTimeout(() => {
+          set({ notification: null });
+          notificationTimer = null;
+        }, 4000);
       },
 
       clearNotification: () => set({ notification: null }),

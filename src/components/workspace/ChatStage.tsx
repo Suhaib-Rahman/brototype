@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Bot, User, Send } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bot, User, Send, CheckCircle2 } from "lucide-react";
 import { useChatStore } from "@/store/useChatStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -64,6 +64,7 @@ export default function ChatStage() {
         addMessage({ role: "assistant", content: reply });
       }
 
+      // Simple memory chip extraction logic
       const textLower = text.toLowerCase();
       if (textLower.includes("sqft") && !memoryChips.find(c => c.label === "Plot")) {
         const match = textLower.match(/(\d+,?\d*)/);
@@ -127,98 +128,165 @@ export default function ChatStage() {
   };
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Memory Chips */}
-      {memoryChips.length > 0 && (
-        <div style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {memoryChips.map((chip, i) => (
-            <div key={i} className={`badge badge-${chip.color}`} style={{ fontSize: "11px" }}>
-              {chip.label}: {chip.value}
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden", background: "var(--bg)" }}>
+      {/* Memory Chips Header */}
+      <AnimatePresence>
+        {memoryChips.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)", display: "flex", gap: "8px", flexWrap: "wrap", background: "var(--surface-0)", zIndex: 10 }}
+          >
+            {memoryChips.map((chip, i) => (
+              <motion.div 
+                key={i} 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className={`badge badge-${chip.color}`} 
+                style={{ fontSize: "11px" }}
+              >
+                {chip.label}: {chip.value}
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 140px" }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 12 }}
+      {/* Messages Scroll Area */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "40px 16px 140px" }} className="custom-scroll">
+        <div style={{ maxWidth: "700px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "32px" }}>
+          {messages.map((m) => (
+            <motion.div 
+              key={m.id} 
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              style={{ 
+                display: "flex", 
+                justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+              }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 500, color: msg.role === "assistant" ? "var(--t-primary)" : "var(--t-secondary)" }}>
-                {msg.role === "assistant" ? (
-                  <div style={{ width: "20px", height: "20px", borderRadius: "5px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Bot size={10} color="white" />
-                  </div>
-                ) : <User size={14} />}
-                {msg.role === "assistant" ? "Architectural AI" : "You"}
-              </div>
               <div style={{
-                fontSize: "14px", lineHeight: 1.6, paddingLeft: "28px",
-                color: msg.role === "assistant" ? "var(--t-primary)" : "var(--t-secondary)",
-                whiteSpace: "pre-wrap",
+                maxWidth: "85%",
+                padding: "20px 24px",
+                borderRadius: m.role === "user" ? "24px 24px 4px 24px" : "24px 24px 24px 4px",
+                background: m.role === "user" ? "var(--accent)" : "var(--surface-1)",
+                color: m.role === "user" ? "white" : "var(--t-primary)",
+                fontSize: "15px",
+                lineHeight: "1.6",
+                boxShadow: m.role === "user" ? "var(--shadow-md)" : "none",
+                border: m.role === "user" ? "none" : "1px solid var(--border)",
+                position: "relative",
               }}>
-                {msg.content}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", opacity: 0.6 }}>
+                  {m.role === "assistant" ? (
+                    <div className="pulse" style={{ width: "20px", height: "20px", borderRadius: "50%", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Bot size={12} color="white" />
+                    </div>
+                  ) : <User size={14} />}
+                  <span style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    {m.role === "user" ? "Client" : "Senior Architect"}
+                  </span>
+                </div>
+                {m.content}
               </div>
             </motion.div>
           ))}
+
+          {isTyping && (
+            <div style={{ display: "flex", gap: "12px", alignItems: "center", padding: "12px 0" }}>
+              <div className="pulse" style={{ width: "36px", height: "36px", borderRadius: "12px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Bot size={18} color="white" />
+              </div>
+              <div style={{ display: "flex", gap: "5px" }}>
+                {[0, 1, 2].map(i => (
+                  <motion.div
+                    key={i}
+                    animate={{ opacity: [0.3, 1, 0.3], y: [0, -5, 0] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                    style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--accent)" }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
       </div>
 
-      {/* Input Area */}
+      {/* Sticky Input Bar */}
       <div style={{
-        position: "fixed", bottom: "0", left: "0", right: "0",
-        padding: "16px 16px 24px", 
-        background: "linear-gradient(transparent, var(--bg) 20%)",
+        position: "sticky", bottom: "0", left: "0", right: "0",
+        padding: "24px 16px 40px", 
+        background: "linear-gradient(transparent, var(--bg) 30%)",
         zIndex: 50,
       }}>
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "700px", margin: "0 auto" }}>
           {!requirementsComplete ? (
-            <form onSubmit={handleSend} style={{ display: "flex", gap: "8px", position: "relative" }}>
+            <form onSubmit={handleSend} style={{ display: "flex", gap: "12px", position: "relative" }}>
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="Type your requirements..."
-                className="input-field"
+                placeholder="Describe your vision, lifestyle, or plot details..."
+                autoFocus
                 style={{ 
                   flex: 1, 
-                  padding: "14px 18px", 
-                  paddingRight: "48px",
-                  borderRadius: "100px", 
+                  padding: "18px 24px", 
+                  paddingRight: "60px",
+                  borderRadius: "20px", 
                   background: "var(--surface-1)",
                   border: "1px solid var(--border)",
-                  fontSize: "14px",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.3)"
+                  color: "var(--t-primary)",
+                  fontSize: "15px",
+                  boxShadow: "var(--shadow-lg)",
+                  outline: "none",
+                  transition: "all 0.2s",
                 }}
+                className="input-focus-accent"
               />
               <button 
                 type="submit" 
                 disabled={!inputText.trim() || isTyping}
                 style={{
-                  position: "absolute", right: "5px", top: "5px", bottom: "5px", width: "38px",
-                  borderRadius: "100px", 
+                  position: "absolute", right: "8px", top: "8px", bottom: "8px", width: "44px",
+                  borderRadius: "14px", 
                   background: inputText.trim() ? "var(--t-primary)" : "var(--surface-2)",
                   color: inputText.trim() ? "black" : "var(--t-muted)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  border: "none", cursor: inputText.trim() ? "pointer" : "default"
+                  border: "none", cursor: inputText.trim() ? "pointer" : "default",
+                  transition: "all 0.2s",
                 }}
               >
-                <Send size={14} />
+                <Send size={18} />
               </button>
             </form>
           ) : (
-            <button onClick={handleGeneratePlan} className="btn-accent" style={{ width: "100%", padding: "16px", borderRadius: "100px", fontWeight: 700 }}>
+            <motion.button 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleGeneratePlan} 
+              className="btn-accent pulse" 
+              style={{ 
+                width: "100%", padding: "20px", borderRadius: "20px", fontWeight: 800, 
+                fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px",
+                boxShadow: "var(--shadow-glow)"
+              }}
+            >
+              <CheckCircle2 size={20} />
               Generate Architectural Plan
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .input-focus-accent:focus {
+          border-color: var(--accent) !important;
+          box-shadow: 0 0 0 4px var(--accent-dim), var(--shadow-lg) !important;
+        }
+      `}</style>
     </div>
   );
 }

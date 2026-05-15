@@ -40,12 +40,10 @@ export default function DashboardPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  if (!mounted) return null;
-
   const userName = customer?.name && customer.name !== "Guest" ? customer.name : "Architect";
 
   return (
-    <div style={{ height: "100vh", display: "flex", background: "var(--bg)", color: "var(--t-primary)", overflow: "hidden", position: "relative" }}>
+    <div style={{ height: "100vh", display: "flex", background: "var(--bg)", color: "var(--t-primary)", overflow: "hidden", position: "relative", opacity: mounted ? 1 : 0, transition: "opacity 0.2s ease-out" }}>
 
       {/* ── 1. Left Sidebar ───────────────────────────────────── */}
       <aside style={{ 

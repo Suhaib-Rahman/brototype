@@ -194,7 +194,7 @@ export const useCostStore = create<CostState>()(
             projectId: plan.id,
             quality: quality,
             location: plan.plotContext?.location_context || "Global Market",
-            currency: "USD",
+            currency: "INR",
             totalProjectCost,
             totalMaterialCost: Object.values(categoryMap).reduce((acc, cat) => acc + cat.totalMaterialCost, 0),
             totalLaborCost: Object.values(categoryMap).reduce((acc, cat) => acc + cat.totalLaborCost, 0),
@@ -283,6 +283,10 @@ export const useCostStore = create<CostState>()(
     }),
     {
       name: "archai-cost",
+      partialize: (state) => ({
+        quality: state.quality,
+        // Don't persist report — regenerate from plan data
+      }),
     }
   )
 );

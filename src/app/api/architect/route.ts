@@ -7,8 +7,34 @@ interface Message {
   text?: string;
 }
 
+// ── Simple in-memory rate limiting ───────────────────────────────
+const RATE_LIMIT = new Map<string, { count: number; resetAt: number }>();
+const MAX_REQUESTS = 20;
+const WINDOW_MS = 60_000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = RATE_LIMIT.get(ip);
+  if (!entry || now > entry.resetAt) {
+    RATE_LIMIT.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= MAX_REQUESTS) return false;
+  entry.count++;
+  return true;
+}
+
 export async function POST(req: Request) {
   try {
+    // ── Rate limiting ──────────────────────────────────────────
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please wait a moment before trying again.' },
+        { status: 429 }
+      );
+    }
+
     const { messages, projectContext, generateFeasibility, mode } = await req.json();
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -19,12 +45,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    // ── API key passed via header instead of URL query param ──
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`;
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    };
 
-    // Mode 1: Full Floor Plan Generation or Editing (Feasibility/Architect Mode)
-    if (generateFeasibility || mode === 'edit') {
-      const isEditing = mode === 'edit';
-      const systemPrompt = `
+    // ── Shared timeout via AbortController (30s) ─────────────
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      // Mode 1: Full Floor Plan Generation or Editing (Feasibility/Architect Mode)
+      if (generateFeasibility || mode === 'edit') {
+        const isEditing = mode === 'edit';
+        const systemPrompt = `
 You are an elite Senior Architect and Computation Design Expert. 
 ${isEditing ? "The user wants to MODIFY an existing floor plan based on specific instructions." : "Your task is to generate a comprehensive, valid JSON FloorPlan object based on user requirements with MATHEMATICAL PRECISION."}
 
@@ -90,102 +126,125 @@ RULES:
 5. Canvas coordinates: Keep rooms within 0-viewBoxW and 0-viewBoxH.
 6. Return a complete, high-fidelity response.
 ${isEditing ? "CRITICAL: You MUST maintain the general layout of the existing plan while applying the requested changes. Do not change IDs of existing rooms unless they are removed or replaced." : ""}
-      `.trim();
+        `.trim();
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: authHeaders,
+          signal: controller.signal,
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: systemPrompt }]
+            },
+            contents: [{
+              role: "user",
+              parts: [{ text: `Conversation History: ${JSON.stringify(messages)}\n\nProject Context: ${JSON.stringify(projectContext)}` }]
+            }],
+            generationConfig: {
+              temperature: isEditing ? 0.4 : 0.8,
+              responseMimeType: "application/json"
+            }
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || "Gemini API Error");
+
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+
+        // ── Safe JSON parsing — don't crash on malformed AI output ──
+        try {
+          const parsed = JSON.parse(reply);
+          return NextResponse.json(parsed);
+        } catch {
+          return NextResponse.json(
+            { error: 'AI returned malformed plan data. Please retry generation.' },
+            { status: 422 }
+          );
+        }
+      }
+
+      // Mode 2: Conversational Architect / Copilot Mode
+      const isCopilot = mode === 'copilot';
+      
+      const systemPrompt = isCopilot 
+        ? `You are an elite Architectural Copilot within the ARCOVA Architectural Operating System.
+           You are analyzing the current floor plan and providing expert feedback.
+           Context: ${JSON.stringify(projectContext)}
+           Focus on: Code compliance, Vastu/Feng Shui, cost optimization, and spatial efficiency.
+           Be concise, professional, and insightful. Avoid generic advice; be specific to the layout provided.`
+        : `You are the primary "Architectural Intelligence Engine" for the ARCOVA platform. 
+           You are currently operating in STAGE 01: HUMAN UNDERSTANDING & LIFESTYLE INTELLIGENCE.
+           
+           CORE MISSION: Architecture is not just geometry; it is a response to human behavior, emotional needs, and lifestyle patterns. You must understand the PEOPLE before the SPACE.
+           
+           STAGE 01 — HUMAN UNDERSTANDING: Focus on behavior and lifestyle.
+           STAGE 02 — SITE INPUT: Collect sketches and validate requirements.
+           STAGE 03 — REGULATORY: Calculate FAR, setbacks, and feasibility.
+           STAGE 04 — ZONING: Map spatial relationships and circulation flow.
+           
+           STAGE 05 — PLAN DRAFTING & TECHNICAL INTELLIGENCE:
+           1. DRAFTING IQ: Generate dimensionally accurate, executable architectural plans (walls, doors, windows).
+           2. COORDINATION: Synchronize Furniture, Structural, Electrical, and Plumbing (MEP) systems.
+           3. TECHNICAL SPECS: Define wall thickness, structural spacing, ceiling heights, and clearances.
+           4. REASONING: Explain every technical decision (e.g., column placement for load distribution).
+           5. CONSTRUCTION READY: Ensure all elements are technically feasible and dimensionally precise.
+           
+           CONVERSATIONAL RULES:
+           - Drafting is construction-ready engineering, not just drawing.
+           - Maintain synchronization between technical layers (e.g., updating a wall updates electrical/plumbing).
+           - Use technical terminology (Load distribution, MEP coordination, Fixture positioning).
+           - Provide deep reasoning for spatial and structural choices.
+           
+           CRITICAL INSTRUCTION: Once you have gathered enough human and site intelligence to generate a floor plan, you MUST append the exact string "[GENERATE_PLAN_READY]" at the very end of your response.`.trim();
+
+      // Convert standard {role, content} to Gemini {role, parts: [{text}]} format
+      const formattedContents = messages.map((m: Message) => ({
+        role: (m.role === 'user' || m.sender === 'user') ? 'user' : 'model',
+        parts: [{ text: m.content || m.text }]
+      }));
 
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
+        signal: controller.signal,
         body: JSON.stringify({
           systemInstruction: {
             parts: [{ text: systemPrompt }]
           },
-          contents: [{
-            role: "user",
-            parts: [{ text: `Conversation History: ${JSON.stringify(messages)}\n\nProject Context: ${JSON.stringify(projectContext)}` }]
-          }],
+          contents: formattedContents,
           generationConfig: {
-            temperature: isEditing ? 0.4 : 0.8,
-            responseMimeType: "application/json"
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40
           }
         })
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Gemini API Error");
-
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-      return NextResponse.json(JSON.parse(reply));
-    }
-
-    // Mode 2: Conversational Architect / Copilot Mode
-    const isCopilot = mode === 'copilot';
-    
-    const systemPrompt = isCopilot 
-      ? `You are an elite Architectural Copilot within the ARCOVA Architectural Operating System.
-         You are analyzing the current floor plan and providing expert feedback.
-         Context: ${JSON.stringify(projectContext)}
-         Focus on: Code compliance, Vastu/Feng Shui, cost optimization, and spatial efficiency.
-         Be concise, professional, and insightful. Avoid generic advice; be specific to the layout provided.`
-      : `You are the primary "Architectural Intelligence Engine" for the ARCOVA platform. 
-         You are currently operating in STAGE 01: HUMAN UNDERSTANDING & LIFESTYLE INTELLIGENCE.
-         
-         CORE MISSION: Architecture is not just geometry; it is a response to human behavior, emotional needs, and lifestyle patterns. You must understand the PEOPLE before the SPACE.
-         
-         STAGE 01 — HUMAN UNDERSTANDING: Focus on behavior and lifestyle.
-         STAGE 02 — SITE INPUT: Collect sketches and validate requirements.
-         STAGE 03 — REGULATORY: Calculate FAR, setbacks, and feasibility.
-         STAGE 04 — ZONING: Map spatial relationships and circulation flow.
-         
-         STAGE 05 — PLAN DRAFTING & TECHNICAL INTELLIGENCE:
-         1. DRAFTING IQ: Generate dimensionally accurate, executable architectural plans (walls, doors, windows).
-         2. COORDINATION: Synchronize Furniture, Structural, Electrical, and Plumbing (MEP) systems.
-         3. TECHNICAL SPECS: Define wall thickness, structural spacing, ceiling heights, and clearances.
-         4. REASONING: Explain every technical decision (e.g., column placement for load distribution).
-         5. CONSTRUCTION READY: Ensure all elements are technically feasible and dimensionally precise.
-         
-         CONVERSATIONAL RULES:
-         - Drafting is construction-ready engineering, not just drawing.
-         - Maintain synchronization between technical layers (e.g., updating a wall updates electrical/plumbing).
-         - Use technical terminology (Load distribution, MEP coordination, Fixture positioning).
-         - Provide deep reasoning for spatial and structural choices.
-         
-         CRITICAL INSTRUCTION: Once you have gathered enough human and site intelligence to generate a floor plan, you MUST append the exact string "[GENERATE_PLAN_READY]" at the very end of your response.`.trim();
-
-    // Convert standard {role, content} to Gemini {role, parts: [{text}]} format
-    const formattedContents = messages.map((m: Message) => ({
-      role: (m.role === 'user' || m.sender === 'user') ? 'user' : 'model',
-      parts: [{ text: m.content || m.text }]
-    }));
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        contents: formattedContents,
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.95,
-          topK: 40
+      if (!response.ok) {
+        // Specifically handle expired keys or quota issues
+        if (data.error?.status === 'UNAUTHENTICATED') {
+          throw new Error("Your Gemini API key is invalid or expired. Please update it in .env.local.");
         }
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      // Specifically handle expired keys or quota issues
-      if (data.error?.status === 'UNAUTHENTICATED') {
-        throw new Error("Your Gemini API key is invalid or expired. Please update it in .env.local.");
+        throw new Error(data.error?.message || "Gemini API Error");
       }
-      throw new Error(data.error?.message || "Gemini API Error");
+
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I could not process that request.";
+      
+      return NextResponse.json({ reply });
+    } finally {
+      clearTimeout(timeout);
+    }
+  } catch (error: unknown) {
+    // Handle AbortController timeout
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: 'Request timed out after 30 seconds. The AI service may be busy — please try again.' },
+        { status: 504 }
+      );
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I could not process that request.";
-    
-    return NextResponse.json({ reply });
-  } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('Gemini API Error:', errorMsg);
     return NextResponse.json(

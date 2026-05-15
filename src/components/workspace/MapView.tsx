@@ -62,14 +62,7 @@ export default function MapView() {
       polygonRef.current.remove();
     }
 
-    const icon = L.divIcon({
-      html: `<div style="width:24px;height:24px;background:linear-gradient(135deg,#3B82F6,#22D3EE);border-radius:50%;border:3px solid white;box-shadow:0 4px 16px rgba(59,130,246,0.5);"></div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-      className: "",
-    });
-
-    markerRef.current = L.marker([lat, lng], { icon }).addTo(map);
+    markerRef.current = L.marker([lat, lng]).addTo(map);
     
     // Draw polygon around the marker dynamically
     polygonRef.current = L.polygon([
@@ -78,8 +71,19 @@ export default function MapView() {
       [lat - 0.0005, lng + 0.0006],
       [lat - 0.0005, lng - 0.0006]
     ], {
-      color: "#3B82F6", fillColor: "#3B82F640", fillOpacity: 0.3, weight: 2, dashArray: "6,4"
+      color: "var(--accent)", fillColor: "var(--accent-dim)", fillOpacity: 0.3, weight: 2, dashArray: "8,6"
     }).addTo(map);
+
+    const iconHtml = `
+      <div class="pulse" style="width:28px;height:28px;background:var(--gradient-ai);border-radius:50%;border:4px solid white;box-shadow:var(--shadow-glow);"></div>
+    `;
+    const premiumIcon = L.divIcon({
+      html: iconHtml,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      className: "",
+    });
+    markerRef.current.setIcon(premiumIcon);
 
   }, [lat, lng, setCoordinates, setLocation]);
 

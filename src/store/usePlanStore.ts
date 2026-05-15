@@ -111,8 +111,8 @@ export const usePlanStore = create<PlanState>()(
       name: "archai-plan",
       partialize: (state) => ({
         floorPlan: state.floorPlan,
-        editHistory: state.editHistory,
-        historyIndex: state.historyIndex,
+        editHistory: state.editHistory.slice(-3), // Only persist last 3 to avoid localStorage overflow
+        historyIndex: Math.min(state.historyIndex, 2),
       }),
     }
   )

@@ -9,18 +9,22 @@ import {
 } from "lucide-react";
 import { useUIStore, WorkspaceStage } from "@/store/useUIStore";
 import { AIStudioView } from "@/components/workspace/AIStudioView";
-import LocationStage from "@/components/workspace/LocationStage";
-import CadStage from "@/components/workspace/CadStage";
-import PlanStage from "@/components/workspace/PlanStage";
-import ThreeDStage from "@/components/workspace/ThreeDStage";
-import MaterialStage from "@/components/workspace/MaterialStage";
-import CinematicStudio from "@/components/workspace/CinematicStudio";
-import CostEstimationStage from "@/components/workspace/CostEstimationStage";
-import CollaborationStage from "@/components/workspace/CollaborationStage";
-import SummaryStage from "@/components/workspace/SummaryStage";
-import IntelligencePanel from "@/components/workspace/IntelligencePanel";
-import DraftingStage from "@/components/workspace/DraftingStage";
+import { ErrorBoundary } from "@/components/providers/ErrorBoundary";
+import dynamic from "next/dynamic";
 import CommandPalette from "@/components/workspace/CommandPalette";
+import IntelligencePanel from "@/components/workspace/IntelligencePanel";
+
+// ── Dynamic imports for heavy workspace stages ──────────────────
+const LocationStage = dynamic(() => import("@/components/workspace/LocationStage"));
+const CadStage = dynamic(() => import("@/components/workspace/CadStage"));
+const PlanStage = dynamic(() => import("@/components/workspace/PlanStage"));
+const DraftingStage = dynamic(() => import("@/components/workspace/DraftingStage"));
+const ThreeDStage = dynamic(() => import("@/components/workspace/ThreeDStage"), { ssr: false });
+const MaterialStage = dynamic(() => import("@/components/workspace/MaterialStage"));
+const CinematicStudio = dynamic(() => import("@/components/workspace/CinematicStudio"));
+const CostEstimationStage = dynamic(() => import("@/components/workspace/CostEstimationStage"));
+const CollaborationStage = dynamic(() => import("@/components/workspace/CollaborationStage"));
+const SummaryStage = dynamic(() => import("@/components/workspace/SummaryStage"));
 
 const STAGES: { id: WorkspaceStage; label: string; icon: typeof Sparkles }[] = [
   { id: "onboarding", label: "01 Lifestyle IQ", icon: Sparkles },
@@ -77,7 +81,7 @@ export default function WorkspacePage() {
   const showRightPanel = rightPanelOpen && ["plan", "3d", "material", "cinematic", "cost", "summary"].includes(currentStage);
 
   return (
-    <div style={{ background: "var(--bg)", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ background: "var(--bg)", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", opacity: mounted ? 1 : 0, transition: "opacity 0.15s ease-out" }}>
       {/* ── Top Nav ─────────────────────────────────────────── */}
       <header className="glass" style={{
         height: "52px", borderRadius: 0, borderTop: "none", borderLeft: "none", borderRight: "none",
@@ -200,6 +204,7 @@ export default function WorkspacePage() {
 
         {/* Center Canvas */}
         <main style={{ flex: 1, overflow: "auto", position: "relative" }}>
+          <ErrorBoundary>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStage}
@@ -222,6 +227,7 @@ export default function WorkspacePage() {
               {currentStage === "summary" && <SummaryStage />}
             </motion.div>
           </AnimatePresence>
+          </ErrorBoundary>
         </main>
 
         {/* Right Intelligence Panel */}

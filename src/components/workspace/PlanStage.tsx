@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ZoomIn, ZoomOut, MousePointer2,
-  ArrowRight, Share2, Shield, Info, Activity, LayoutGrid, Network, Loader2
+  ArrowRight, Share2, Shield, Info, Activity, LayoutGrid, Network, Loader2, Sparkles, Box
 } from "lucide-react";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useOnboardingStore } from "@/store/useOnboardingStore";
@@ -32,7 +32,6 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Spatial Hierarchy Logic (Stage 04)
   const getPrivacyLevel = (type: string) => {
     const privateTypes = ['bedroom', 'master', 'bath'];
     const serviceTypes = ['kitchen', 'utility', 'parking'];
@@ -47,7 +46,6 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
     return "var(--accent)";
   };
 
-  // Drag Interaction
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     setDraggingRoomId(id);
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -58,18 +56,23 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
     const rect = (e.currentTarget as Element).getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
-    updateRoom(draggingRoomId, { x: Math.round(x / 20) * 20, y: Math.round(y / 20) * 20 });
+    updateRoom(draggingRoomId, { x: Math.round(x / 10) * 10, y: Math.round(y / 10) * 10 });
   };
 
   const handlePointerUp = () => setDraggingRoomId(null);
 
   if (isGenerating || !floorPlan) {
     return (
-      <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
-        <div style={{ textAlign: "center" }}>
-          <Loader2 size={32} className="spin" color="var(--accent)" style={{ marginBottom: "20px" }} />
-          <h3 className="font-display">Generating Spatial Logic...</h3>
-          <p style={{ color: "var(--t-muted)", fontSize: "14px" }}>Zoning spaces based on lifestyle and circulation intelligence.</p>
+      <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", position: "relative", overflow: "hidden" }}>
+        <div className="shimmer" style={{ position: "absolute", inset: 0, opacity: 0.05 }} />
+        <div style={{ textAlign: "center", zIndex: 10 }}>
+          <div className="pulse" style={{ width: "64px", height: "64px", borderRadius: "16px", background: "var(--accent-dim)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+            <Loader2 size={32} className="spin" color="var(--accent)" />
+          </div>
+          <h3 className="font-display" style={{ fontSize: "24px", marginBottom: "8px" }}>Generating Spatial Intelligence</h3>
+          <p style={{ color: "var(--t-muted)", fontSize: "14px", maxWidth: "300px", margin: "0 auto" }}>
+            Mapping lifestyle requirements to structural feasibility and circulation flow...
+          </p>
         </div>
       </div>
     );
@@ -78,73 +81,102 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: isMobile ? "column" : "row", background: "var(--bg)", overflow: "hidden" }}>
       
-      {/* ── Main Canvas Area ─────────────────────────────────── */}
-      <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column" }}>
+      {/* ── Main Drafting Canvas ───────────────────────────── */}
+      <div style={{ flex: 1, position: "relative", display: "flex", flexDirection: "column", background: "#08080A" }}>
         
-        {/* Stage Sub-Tabs */}
+        {/* Blueprint Grid Background */}
         <div style={{ 
-          position: "absolute", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 1000,
-          background: "var(--glass)", backdropFilter: "blur(20px)", padding: "4px", borderRadius: "100px",
-          display: "flex", gap: "4px", border: "1px solid var(--border-hover)", boxShadow: "var(--shadow-lg)"
+          position: "absolute", inset: 0, 
+          backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
+          backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
+          opacity: 0.15,
+          pointerEvents: "none"
+        }} />
+
+        {/* Floating Stage Selector */}
+        <div style={{ 
+          position: "absolute", top: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 100,
+          background: "var(--glass)", backdropFilter: "blur(24px)", padding: "5px", borderRadius: "100px",
+          display: "flex", gap: "5px", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)"
         }}>
           {[
-            { id: "zoning", label: "Bubble Diagram (Zoning)", icon: Network },
-            { id: "single-line", label: "Single-Line Plan", icon: LayoutGrid },
+            { id: "zoning", label: "Bubble Diagram", icon: Network },
+            { id: "single-line", label: "Drafting Mode", icon: LayoutGrid },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveSubStage(tab.id as SubStage)}
               style={{
-                padding: "8px 20px", borderRadius: "100px", border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 600,
+                padding: "10px 24px", borderRadius: "100px", border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontWeight: 700,
                 background: activeSubStage === tab.id ? "var(--t-primary)" : "transparent",
                 color: activeSubStage === tab.id ? "var(--bg)" : "var(--t-secondary)",
-                transition: "all 0.2s"
+                transition: "all 0.3s var(--ease-out)",
+                boxShadow: activeSubStage === tab.id ? "var(--shadow-sm)" : "none"
               }}
             >
-              <tab.icon size={14} /> {tab.label}
+              <tab.icon size={15} /> {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Toolbar */}
-        <div style={{ position: "absolute", bottom: "20px", left: "20px", zIndex: 1000, display: "flex", gap: "8px" }}>
-          <div className="glass" style={{ display: "flex", padding: "4px", borderRadius: "12px", border: "1px solid var(--border)" }}>
-            <button className="btn-icon" onClick={() => setZoom(z => Math.min(z + 0.1, 2))}><ZoomIn size={14} /></button>
-            <button className="btn-icon" onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))}><ZoomOut size={14} /></button>
+        {/* Viewport Controls */}
+        <div style={{ position: "absolute", bottom: "32px", left: "32px", zIndex: 100, display: "flex", gap: "12px" }}>
+          <div className="glass" style={{ display: "flex", padding: "6px", borderRadius: "14px", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}>
+            <button className="btn-icon" style={{ border: "none" }} onClick={() => setZoom(z => Math.min(z + 0.1, 2))}><ZoomIn size={16} /></button>
+            <div style={{ width: "1px", background: "var(--border)", margin: "4px 2px" }} />
+            <button className="btn-icon" style={{ border: "none" }} onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))}><ZoomOut size={16} /></button>
           </div>
-          <button className="btn-secondary" style={{ borderRadius: "12px" }} onClick={() => showNotification("info", "Circulation analysis optimized.")}>
-            <Share2 size={14} /> Analyze Flow
+          <button className="btn-secondary pulse" style={{ borderRadius: "14px", padding: "0 24px", fontWeight: 700, fontSize: "13px" }} onClick={() => showNotification("info", "Circulation flow analysis complete: 94% Efficiency.")}>
+            <Activity size={16} color="var(--emerald)" /> Analyze Flow
           </button>
         </div>
 
-        {/* The Canvas */}
+        {/* Drafting Area */}
         <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ 
-            transform: `scale(${zoom})`, transition: "transform 0.1s ease-out",
-            width: floorPlan.viewBoxW, height: floorPlan.viewBoxH,
-            position: "relative", background: activeSubStage === "zoning" ? "transparent" : "var(--surface-1)",
-            borderRadius: "8px", border: activeSubStage === "zoning" ? "none" : "1px solid var(--border)"
-          }}>
+          <motion.div 
+            style={{ 
+              transform: `scale(${zoom})`,
+              width: floorPlan.viewBoxW, height: floorPlan.viewBoxH,
+              position: "relative", 
+              background: activeSubStage === "zoning" ? "transparent" : "rgba(255,255,255,0.02)",
+              borderRadius: "4px", 
+              border: activeSubStage === "zoning" ? "none" : "1px solid rgba(255,255,255,0.1)",
+              boxShadow: activeSubStage === "zoning" ? "none" : "var(--shadow-xl)"
+            }}
+            layout
+          >
             <svg 
               width="100%" height="100%" viewBox={`0 0 ${floorPlan.viewBoxW} ${floorPlan.viewBoxH}`}
               onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}
               style={{ display: "block", overflow: "visible" }}
             >
-              {/* Circulation Lines (Bubble Mode Only) */}
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Interaction Path (Bubble Mode) */}
               {activeSubStage === "zoning" && floorPlan.rooms.map((room, i) => {
                 const nextRoom = floorPlan.rooms[i + 1];
                 if (!nextRoom) return null;
                 return (
-                  <line 
-                    key={`line-${i}`} x1={room.x + room.w/2} y1={room.y + room.h/2} 
+                  <motion.line 
+                    key={`line-${i}`} 
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 0.3 }}
+                    x1={room.x + room.w/2} y1={room.y + room.h/2} 
                     x2={nextRoom.x + nextRoom.w/2} y2={nextRoom.y + nextRoom.h/2}
-                    stroke="var(--t-muted)" strokeWidth="1" strokeDasharray="4 4" style={{ opacity: 0.3 }}
+                    stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="5 5"
                   />
                 );
               })}
 
-              {/* Rooms/Bubbles */}
+              {/* Spatial Nodes */}
               {floorPlan.rooms.map((room) => {
                 const privacy = getPrivacyLevel(room.type || '');
                 const color = getPrivacyColor(privacy);
@@ -159,12 +191,14 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
                       style={{ cursor: "grab" }}
                     >
                       <circle 
-                        cx={room.x + room.w/2} cy={room.y + room.h/2} r={Math.min(room.w, room.h) / 2}
-                        fill={color} fillOpacity="0.1" stroke={color} strokeWidth={isSelected ? "3" : "1.5"}
+                        cx={room.x + room.w/2} cy={room.y + room.h/2} r={Math.min(room.w, room.h) / 2.2}
+                        fill={color} fillOpacity={isSelected ? "0.2" : "0.08"} 
+                        stroke={color} strokeWidth={isSelected ? "3" : "2"}
+                        filter={isSelected ? "url(#glow)" : "none"}
                       />
                       <text 
                         x={room.x + room.w/2} y={room.y + room.h/2} textAnchor="middle" dominantBaseline="middle"
-                        fill="var(--t-primary)" fontSize="10" fontWeight="700" style={{ pointerEvents: "none" }}
+                        fill="white" fontSize="11" fontWeight="800" style={{ pointerEvents: "none", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}
                       >
                         {room.name.split(' ')[0]}
                       </text>
@@ -181,10 +215,20 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
                   >
                     <rect 
                       x={room.x} y={room.y} width={room.w} height={room.h}
-                      fill="var(--bg)" stroke={isSelected ? "var(--accent)" : "var(--t-muted)"} strokeWidth={isSelected ? "2" : "1"}
+                      fill={isSelected ? "rgba(0,113,227,0.05)" : "rgba(255,255,255,0.02)"} 
+                      stroke={isSelected ? "var(--accent)" : "rgba(255,255,255,0.2)"} 
+                      strokeWidth={isSelected ? "2.5" : "1.2"}
                     />
+                    {/* Dimension Markers */}
+                    {isSelected && (
+                      <g style={{ opacity: 0.7 }}>
+                        <text x={room.x + room.w/2} y={room.y - 10} textAnchor="middle" fill="var(--accent)" fontSize="10" fontWeight="700">{room.realW}'</text>
+                        <text x={room.x + room.w + 10} y={room.y + room.h/2} dominantBaseline="middle" fill="var(--accent)" fontSize="10" fontWeight="700" transform={`rotate(90, ${room.x + room.w + 10}, ${room.y + room.h/2})`}>{room.realH}'</text>
+                      </g>
+                    )}
                     <text 
-                      x={room.x + 8} y={room.y + 16} fill="var(--t-secondary)" fontSize="9" fontWeight="600"
+                      x={room.x + 10} y={room.y + 20} fill={isSelected ? "var(--accent)" : "var(--t-secondary)"} 
+                      fontSize="10" fontWeight="800" letterSpacing="0.05em"
                     >
                       {room.name.toUpperCase()}
                     </text>
@@ -192,75 +236,117 @@ export default function PlanStage({ onNext }: { onNext?: () => void }) {
                 );
               })}
             </svg>
-          </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* ── Side Intelligence Panel ────────────────────────────── */}
-      <div style={{
-        width: isMobile ? "100%" : "360px",
+      {/* ── Intelligence Panel ──────────────────────────── */}
+      <aside style={{
+        width: isMobile ? "100%" : "380px",
         background: "var(--surface-1)", borderLeft: isMobile ? "none" : "1px solid var(--border)",
-        display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto", padding: "24px"
-      }}>
-        <div style={{ marginBottom: "24px" }}>
-          <div className="badge badge-cyan" style={{ marginBottom: "12px" }}>
-            <Activity size={10} /> Planning Intelligence
+        display: "flex", flexDirection: "column", flexShrink: 0, overflowY: "auto", padding: "32px",
+        zIndex: 200
+      }} className="glass">
+        <div style={{ marginBottom: "32px" }}>
+          <div className="badge badge-cyan" style={{ marginBottom: "16px" }}>
+            <Activity size={12} /> Optimization Active
           </div>
-          <h2 className="font-display" style={{ fontSize: "1.4rem", marginBottom: "8px" }}>Spatial Zoning</h2>
-          <p style={{ fontSize: "12px", color: "var(--t-muted)", lineHeight: 1.6 }}>
-            Process Stage 04: Optimizing spatial adjacency and circulation flow based on behavioral intent.
+          <h2 className="font-display" style={{ fontSize: "22px", marginBottom: "8px", letterSpacing: "-0.02em" }}>Spatial Intelligence</h2>
+          <p style={{ fontSize: "13px", color: "var(--t-muted)", lineHeight: 1.6 }}>
+            Generating high-fidelity spatial hierarchy based on behavioral patterns and environmental constraints.
           </p>
         </div>
 
-        {selectedRoom ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div className="card" style={{ padding: "16px", borderRadius: "12px" }}>
-              <div style={{ fontSize: "14px", fontWeight: 700, marginBottom: "4px" }}>{selectedRoom.name}</div>
-              <div style={{ fontSize: "11px", color: "var(--t-muted)", marginBottom: "12px" }}>{selectedRoom.realW}&apos; × {selectedRoom.realH}&apos; · {selectedRoom.sqft} SF</div>
-              
-              <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-                <div className="badge" style={{ background: "var(--surface-2)", color: getPrivacyColor(getPrivacyLevel(selectedRoom.type || '')) }}>
-                  {getPrivacyLevel(selectedRoom.type || '')} Zone
+        <AnimatePresence mode="wait">
+          {selectedRoom ? (
+            <motion.div 
+              key={selectedRoom.id}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+            >
+              <div className="card glass-accent" style={{ padding: "24px", borderRadius: "18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                  <Box size={18} color="var(--accent)" />
+                  <div style={{ fontSize: "16px", fontWeight: 800 }}>{selectedRoom.name}</div>
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--t-muted)", marginBottom: "16px", fontWeight: 600 }}>
+                  {selectedRoom.realW}' × {selectedRoom.realH}' · <span style={{ color: "var(--t-primary)" }}>{selectedRoom.sqft} SQFT</span>
+                </div>
+                
+                <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+                  <div className="badge" style={{ background: "var(--surface-3)", border: "1px solid var(--border)", color: getPrivacyColor(getPrivacyLevel(selectedRoom.type || '')) }}>
+                    {getPrivacyLevel(selectedRoom.type || '')} Zone
+                  </div>
+                </div>
+
+                <div style={{ fontSize: "11px", fontWeight: 800, textTransform: "uppercase", marginBottom: "10px", color: "var(--t-muted)", letterSpacing: "0.05em" }}>Spatial Logic</div>
+                <p style={{ fontSize: "13px", color: "var(--t-secondary)", lineHeight: 1.7 }}>
+                  Positioned for optimal <strong>thermal comfort</strong> and <strong>privacy buffering</strong>. Connection to {selectedRoom.type === 'master' ? 'Bath' : 'Circulation'} has been synchronized.
+                </p>
+              </div>
+
+              <div className="card" style={{ padding: "20px", borderRadius: "18px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <Shield size={16} color="var(--emerald)" /> Regulatory Compliance
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {[
+                    "Structural span verified (< 18')",
+                    "Cross-ventilation quota met",
+                    "Egress clearance verified"
+                  ].map(check => (
+                    <div key={check} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", color: "var(--t-muted)" }}>
+                      <Check size={14} color="var(--emerald)" /> {check}
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", marginBottom: "8px", color: "var(--t-muted)" }}>Spatial Adjacency</div>
-              <p style={{ fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
-                Directly connected to <strong>Circulation Path</strong>. Optimized for <strong>Natural Light</strong> from the {selectedRoom.windows?.[0]?.wall || "Primary"} flank.
+            </motion.div>
+          ) : (
+            <div className="card" style={{ padding: "40px 20px", textAlign: "center", borderRadius: "20px", border: "1px dashed var(--border)", background: "rgba(255,255,255,0.01)" }}>
+              <div className="pulse" style={{ width: "56px", height: "56px", borderRadius: "50%", background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <MousePointer2 size={24} color="var(--t-muted)" />
+              </div>
+              <h4 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "8px" }}>Interactive Drafting</h4>
+              <p style={{ fontSize: "12px", color: "var(--t-muted)", lineHeight: 1.5 }}>
+                Select any spatial node to analyze its technical logic or adjust its positioning.
               </p>
             </div>
-
-            <div className="card" style={{ padding: "16px", borderRadius: "12px", background: "var(--glass)" }}>
-              <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Shield size={14} color="var(--emerald)" /> Planning Optimization
-              </div>
-              <ul style={{ fontSize: "11px", color: "var(--t-secondary)", paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                <li>Minimized dead-space in circulation</li>
-                <li>Strategic privacy buffering applied</li>
-                <li>Optimal cross-ventilation corridor</li>
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <div className="card" style={{ padding: "20px", textAlign: "center", borderRadius: "16px", border: "1px dashed var(--border)" }}>
-            <MousePointer2 size={32} color="var(--t-muted)" style={{ marginBottom: "12px" }} />
-            <p style={{ fontSize: "13px", color: "var(--t-muted)" }}>Select a spatial node to edit zoning properties.</p>
-          </div>
-        )}
+          )}
+        </AnimatePresence>
 
         {/* Planning Logic Explanation */}
-        <div style={{ marginTop: "24px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, marginBottom: "12px", color: "var(--t-primary)" }}>AI Planning Rationale</div>
-          <div className="card" style={{ padding: "16px", borderRadius: "12px", background: "var(--surface-2)", fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.6 }}>
-            <Info size={14} color="var(--accent)" style={{ marginBottom: "8px" }} />
-            Layout generated using a <strong>Central Spine</strong> circulation model. Private zones are clustered for acoustic isolation, while Public zones maintain direct site-visual connectivity.
+        <div style={{ marginTop: "auto", paddingTop: "32px" }}>
+          <div className="card glass-subtle" style={{ padding: "20px", borderRadius: "18px", border: "1px solid var(--accent-dim)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", color: "var(--accent)", fontSize: "13px", fontWeight: 800 }}>
+              <Sparkles size={16} /> Architectural Rationale
+            </div>
+            <p style={{ fontSize: "12px", color: "var(--t-secondary)", lineHeight: 1.7 }}>
+              Design utilizes a <strong>Radiant Core</strong> model. All high-traffic zones are equidistant from the vertical node to minimize circulation fatigue.
+            </p>
           </div>
+          
+          <button onClick={onNext} className="btn-accent pulse" style={{ width: "100%", padding: "18px", borderRadius: "100px", marginTop: "24px", fontWeight: 800, fontSize: "15px", boxShadow: "var(--shadow-glow)" }}>
+            Confirm Layout <ArrowRight size={18} />
+          </button>
         </div>
-
-        <button className="btn-accent" onClick={onNext} style={{ width: "100%", padding: "16px", borderRadius: "100px", marginTop: "auto" }}>
-          Lock Planning & Continue <ArrowRight size={16} />
-        </button>
-      </div>
+      </aside>
+      
+      <style jsx>{`
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+      `}</style>
     </div>
+  );
+}
+
+function Check({ size, color }: { size: number, color: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
   );
 }

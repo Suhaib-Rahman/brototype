@@ -152,46 +152,64 @@ export default function IntelligencePanel() {
                    <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--t-primary)" }}>Lifestyle Intelligence Profile</span>
                 </div>
                 
-                {score ? (
-                  <div style={{
-                    width: "84px", height: "84px", borderRadius: "50%", margin: "0 auto 12px",
-                    background: `conic-gradient(var(--accent) ${score.total * 3.6}deg, var(--surface-3) 0deg)`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    boxShadow: "0 0 20px rgba(0,113,227,0.15)"
-                  }}>
-                    <div style={{ width: "66px", height: "66px", borderRadius: "50%", background: "var(--surface-1)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-                      <span className="font-display" style={{ fontSize: "1.5rem", lineHeight: 1 }}>{score.total}</span>
-                      <span style={{ fontSize: "9px", color: "var(--t-muted)" }}>IQ Score</span>
+                {plan && score ? (
+                  <>
+                    <div style={{
+                      width: "84px", height: "84px", borderRadius: "50%", margin: "0 auto 12px",
+                      background: `conic-gradient(var(--accent) ${score.total * 3.6}deg, var(--surface-3) 0deg)`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      boxShadow: "0 0 20px rgba(0,113,227,0.15)"
+                    }}>
+                      <div style={{ width: "66px", height: "66px", borderRadius: "50%", background: "var(--surface-1)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                        <span className="font-display" style={{ fontSize: "1.5rem", lineHeight: 1 }}>{score.total}</span>
+                        <span style={{ fontSize: "9px", color: "var(--t-muted)" }}>IQ Score</span>
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="badge badge-emerald" style={{ fontSize: "10px", marginTop: "4px" }}>
+                      <Award size={9} /> High Fidelity · Human Centric
+                    </div>
+
+                    {/* Score bars */}
+                    <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {[
+                        { label: "Space", value: score?.space_efficiency || 0, color: "var(--accent)" },
+                        { label: "Cost", value: score?.cost_efficiency || 0, color: "var(--emerald)" },
+                        { label: "Lifestyle", value: score?.climate_suitability || 0, color: "var(--amber)" },
+                        { label: "Safety", value: score?.compliance_safety || 0, color: "var(--violet)" },
+                      ].map(d => (
+                        <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span style={{ fontSize: "10px", color: "var(--t-muted)", width: "52px", textAlign: "left", fontWeight: 600 }}>{d.label}</span>
+                          <div style={{ flex: 1, height: "4px", background: "var(--surface-3)", borderRadius: "2px", overflow: "hidden" }}>
+                            <div style={{ width: `${d.value}%`, height: "100%", background: d.color, borderRadius: "2px", transition: "width 1s var(--ease-out)" }} />
+                          </div>
+                          <span style={{ fontSize: "10px", fontWeight: 700, width: "24px", color: "var(--t-primary)" }}>{d.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 ) : (
-                  <div style={{ height: "100px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "10px" }}>
-                    <Loader2 size={24} className="spin" color="var(--accent)" />
-                    <span style={{ fontSize: "11px", color: "var(--t-muted)" }}>Synthesizing behavior...</span>
+                  <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "16px" }}>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      {[0, 1, 2].map(i => (
+                        <motion.div 
+                          key={i}
+                          animate={{ 
+                            y: [0, -6, 0],
+                            opacity: [0.4, 1, 0.4]
+                          }}
+                          transition={{ 
+                            duration: 0.8, 
+                            repeat: Infinity, 
+                            delay: i * 0.15 
+                          }}
+                          style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--accent)" }}
+                        />
+                      ))}
+                    </div>
+                    <span style={{ fontSize: "11px", color: "var(--t-muted)", fontWeight: 500, letterSpacing: "0.02em" }}>Synthesizing spatial behavior...</span>
                   </div>
                 )}
-
-                <div className="badge badge-emerald" style={{ fontSize: "10px", marginTop: "4px" }}>
-                  <Award size={9} /> High Fidelity · Human Centric
-                </div>
-
-                {/* Score bars */}
-                <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {[
-                    { label: "Space", value: score?.space_efficiency || 82, color: "var(--accent)" },
-                    { label: "Cost", value: score?.cost_efficiency || 74, color: "var(--emerald)" },
-                    { label: "Lifestyle", value: score?.climate_suitability || 95, color: "var(--amber)" },
-                    { label: "Safety", value: score?.compliance_safety || 88, color: "var(--violet)" },
-                  ].map(d => (
-                    <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ fontSize: "10px", color: "var(--t-muted)", width: "52px", textAlign: "left", fontWeight: 600 }}>{d.label}</span>
-                      <div style={{ flex: 1, height: "4px", background: "var(--surface-3)", borderRadius: "2px", overflow: "hidden" }}>
-                        <div style={{ width: `${d.value}%`, height: "100%", background: d.color, borderRadius: "2px", transition: "width 1s var(--ease-out)" }} />
-                      </div>
-                      <span style={{ fontSize: "10px", fontWeight: 700, width: "24px", color: "var(--t-primary)" }}>{d.value}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {selectedRoom && (
@@ -269,7 +287,7 @@ export default function IntelligencePanel() {
               {/* Exact Room Breakdown */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px", paddingLeft: "4px" }}>Room Schedule</div>
-                {plan?.rooms.map(room => (
+                {plan?.rooms?.map(room => (
                   <div key={room.id} className="card" style={{ padding: "12px", borderRadius: "var(--radius-sm)", background: "var(--surface-2)", border: selectedRoom?.id === room.id ? "1px solid var(--cyan)" : "1px solid var(--border)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -284,6 +302,11 @@ export default function IntelligencePanel() {
                     </div>
                   </div>
                 ))}
+                {!plan?.rooms && (
+                  <div style={{ padding: "24px", textAlign: "center", color: "var(--t-muted)", fontSize: "12px" }}>
+                    No exact plan data available.
+                  </div>
+                )}
               </div>
 
               {/* AI Planning Insights */}
@@ -325,16 +348,17 @@ export default function IntelligencePanel() {
               ))}
 
               {copilotTyping && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: 600 }}>
-                    <div style={{ width: "18px", height: "18px", borderRadius: "4px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <Bot size={10} color="white" />
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }} className="animate-slide-up">
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", fontWeight: 600 }}>
+                    <div className="pulse" style={{ width: "20px", height: "20px", borderRadius: "6px", background: "var(--gradient-ai)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Bot size={12} color="white" />
                     </div>
                     AI Copilot
                   </div>
-                  <div style={{ paddingLeft: "24px", display: "flex", gap: "4px", alignItems: "center", height: "20px" }}>
-                    <Loader2 size={12} className="spin" color="var(--t-muted)" />
-                    <span style={{ fontSize: "11px", color: "var(--t-muted)" }}>Analyzing project logic...</span>
+                  <div style={{ paddingLeft: "28px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div className="shimmer" style={{ height: "12px", width: "80%", borderRadius: "4px", opacity: 0.5 }} />
+                    <div className="shimmer" style={{ height: "12px", width: "60%", borderRadius: "4px", opacity: 0.3 }} />
+                    <span style={{ fontSize: "11px", color: "var(--t-muted)", marginTop: "4px" }}>Analyzing project logic...</span>
                   </div>
                 </div>
               )}

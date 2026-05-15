@@ -323,4 +323,3 @@ export default function OnboardingSystem({ onNext }: { onNext: () => void }) {
     </div>
   );
 }
-}
